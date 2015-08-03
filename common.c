@@ -9,6 +9,35 @@
  ** License: GNU (Copy, modify, distribute as you please. ;)
  ***************************************************************************************/
 
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <unistd.h>
+#include <errno.h>
+
+#include "defs.h"
+
+int ExportImages();
+int Process4CELLData(char *r, int size);
+int Process4LANDData(char *r, int size);
+int ExportTES4Land(char *input_esp_filename, char *worldspace, int bpp);
+int Process4LTEXData(char *r, int size);
+int Process4WRLDData(char *r, int size);
+int bytes_to_int(char b1, char b2, char b3, char b4);
+int DecompressZLIBStream(char *input, int input_size, char output[], int *output_size);
+int CompressZLIBStream(char *input, int input_size, char output[], int *output_size, int compress_level);
+int CleanUp();
+int WriteBMPHeader(FILE *fp_out, int sx, int sy, int bpp);
+int WriteBMPGreyScaleHeader(FILE *fp_out, int sx, int sy, int bpp);
+int HumptyImage(char *output_filename, int opt_image_type, int opt_tes_ver, int bpp);
+int RescaleGreyScale(char *output_filename, int opt_image_type, int opt_tes_ver, int bpp);
+int FixTES3HeaderSize(char *filename, int num_records) ;
+int HumptyVCLR(char *output_filename, int opt_tes_ver);
+int HumptyVTEX3(char *output_filename, int opt_tes_ver, int layer);
+int bytes_to_int(char b1, char b2, char b3, char b4);
+
 int CleanUp()
 {
     int i;

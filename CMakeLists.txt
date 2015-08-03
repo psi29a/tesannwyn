@@ -18,7 +18,14 @@ set(CMAKE_REQUIRED_LIBRARIES m)
 
 include_directories("${tesannwyn_SOURCE_DIR}")
 
-set(SRCS tesannwyn.c)
+set(SRCS
+            #tesannwyn.c
+            common.c
+
+            #tes3_vtex.c
+            #tes3_import.c
+            #tes3_export.c
+)
 
 set(HDRS defs.h funcs.h)
 

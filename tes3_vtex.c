@@ -9,6 +9,39 @@
  ** License: GNU (Copy, modify, distribute as you please. ;)
  ***************************************************************************************/
 
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <stdarg.h>
+#include <ctype.h>
+#include <errno.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <fcntl.h>
+#include <math.h>
+#include <time.h>
+#include <unistd.h>
+
+#include "defs.h"
+
+int GetFormIDForFilename(char *tex_filename, char *ltex_name, char *ltex_filename, char *FormID);
+void GetVTEX34Cell(unsigned short int vtex[16][16], int ntex[34][34], int cell);
+int Match34TexturesQuad(int vtex4[34][34], char *vtex_record, int *vtex_size, int quad);
+int GetFormIDFromTEXNum(unsigned short int texnum, char *FormID);
+int FormIDToString(char *s, char *formid);
+int StringToReverseFormID(char *s, char *formid);
+int GetFormIDForFilename(char *tex_filename, char *ltex_name, char *ltex_filename, char *FormID);
+int Process3LTEXData(char *r, int size);
+int ReadLTEX3(char *filename);
+void GetVTEX34Cell(unsigned short int vtex[16][16], int ntex[34][34], int cell) ;
+int Match34TexturesQuad(int vtex4[34][34], char *vtex_record, int *vtex_size, int quad);
+int GetFormIDFromTEXNum(unsigned short int texnum, char *FormID);
+int FormIDToString(char *s, char *formid);
+int StringToReverseFormID(char *s, char *formid);
+int GetFormIDForFilename(char *tex_filename, char *ltex_name, char *ltex_filename, char *FormID) ;
+int Process3LTEXData(char *r, int size);
+int ReadLTEX3(char *filename);
+
 int Process3LTEXData(char *r, int size)
 {
 	short unsigned int i;

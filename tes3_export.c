@@ -9,6 +9,25 @@
  ** License: GNU (Copy, modify, distribute as you please. ;)
  ***************************************************************************************/
 
+#include <stdio.h>
+#include <stdlib.h>
+#include <errno.h>
+#include <string.h>
+#include <unistd.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+
+#include "defs.h"
+
+int Process3CELLData(char *r, int size);
+int Process3LANDData(char *r, int size);
+int Process3LTEXData(char *r, int size);
+int ExportTES3Land(char *input_esp_filename, int bpp);
+int Process3LANDData(char *r, int size);
+int ReplaceVTEX3Textures(char *vtex);
+int DeStandardizeTES3VTEX(unsigned short int vtex[16][16], unsigned short int ntex[16][16]);
+int WriteLTEXdata(char *filename);
+
 int ExportImages()
 {
     int i;

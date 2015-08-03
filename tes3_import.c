@@ -9,6 +9,41 @@
  ** License: GNU (Copy, modify, distribute as you please. ;)
  ***************************************************************************************/
 
+#include <stdio.h>
+#include <stdlib.h>
+#include <errno.h>
+#include <unistd.h>
+#include <math.h>
+#include <string.h>
+
+#include "defs.h"
+
+int StandardizeRAW(char *input_filename, char *output_filename, int *sx, int *sy, int bpp, int std);
+int StandardizeBMP2RAW(char *input_filename, char *output_filename, int *sx, int *sy, int *Bp, int std);
+int DecompressZLIBStream(char *input, int input_size, char output[], int *output_size);
+int CompressZLIBStream(char *input, int input_size, char output[], int *output_size, int compress_level);
+int ReadScaleVTEX3(char *s_vtex, float scale, int cx, int cy, int y, int sx, int sy, FILE *fp_vtex);
+int ImportImage(char *input_filename);
+int CatchGradientOverflows(int *gradient);
+int WriteTES3LANDRecordR(int cx, int cy, int opt_adjust_height, int image[66][66], FILE *fp_out);
+int WriteTES3LANDRecord(int cx, int cy, int opt_adjust_height, int image[66][66], char vclr[66][66][3], short unsigned int vtex3[16][16], FILE *fp_out);
+int WriteTES3CELLRecord(int cx, int cy, FILE *fp_out);
+int WriteTES3CELLRecordN(int cx, int cy, FILE *fp_out);
+int WriteTES3Header(FILE *fp_out);
+int ShowUsageExit(char *argv0);
+int StandardizeRAW(char *input_filename, char *output_filename, int *sx, int *sy, int Bp, int std);
+int StandardizeBMP2RAW(char *input_filename, char *output_filename, int *sx, int *sy, int *Bp, int std);
+int DecodeOptIgnoreLand(char *s, int *opt_ignore_land_lower, int *opt_ignore_land_upper);
+int DecodeLimits(char *s, int *opt_lower_limit, int *opt_upper_limit);
+int DecodeDimensions(char *s, int *opt_sx, int *opt_sy);
+int DecodeFilenames(char *s);
+int DecodeUserTexture(char *s, char *name, char *fname);
+int WriteTES3LTEX(FILE *fp_out);
+int HexToInt(char *hex);
+int ReadVTEX3(char *s_vtex, int tex_size, int cx, int cy, int y, int sx, int sy, FILE *fp_vtex);
+int GetTimeBasedFormID(void) ;
+int WriteUserTES4LTEXRecord(FILE *fp_out, char *name, char *fname);
+
 int ImportImage(char *input_filename)
 {
     int i,
