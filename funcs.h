@@ -1,7 +1,7 @@
 /*******************************************************************************************
  ** TESAnnwyn: A TES3/TES4 height map importer/exporter (to & from RAW or BMP).
  **
- ** Paul Halliday: 31-Dec-2006 
+ ** Paul Halliday: 31-Dec-2006
  **
  ** This is entirely my own work. No borrowed code. All reverse engineering has been
  ** researched by myself.
@@ -25,7 +25,7 @@ int ReadScaleVTEX3(char *s_vtex, float scale, int cx, int cy, int y, int sx, int
 int ImportImage(char *input_filename);
 int CatchGradientOverflows(int *gradient);
 int WriteTES3LANDRecordR(int cx, int cy, int opt_adjust_height, int image[66][66], FILE *fp_out);
-// int WriteTES3LANDRecord(int cx, int cy, int opt_adjust_height, int image[66][66], char vclr[66][66][3], short unsigned int vtex3[16][16], FILE *fp_out);
+int WriteTES3LANDRecord(int cx, int cy, int opt_adjust_height, int image[66][66], char vclr[66][66][3], short unsigned int vtex3[16][16], FILE *fp_out);
 int WriteTES3CELLRecord(int cx, int cy, FILE *fp_out);
 int WriteTES3CELLRecordN(int cx, int cy, FILE *fp_out);
 int WriteTES3Header(FILE *fp_out);
@@ -51,7 +51,7 @@ int  Process3LTEXData(char *r, int size);
 int ExportTES3Land(char *input_esp_filename, int bpp);
 int Process3LANDData(char *r, int size);
 int ReplaceVTEX3Textures(char *vtex);
-// int StandardizeTES3VTEX(unsigned short int vtex[16][16], unsigned short int ntex[16][16]);
+int StandardizeTES3VTEX(unsigned short int vtex[16][16], unsigned short int ntex[16][16]);
 int DeStandardizeTES3VTEX(unsigned short int vtex[16][16], unsigned short int ntex[16][16]);
 int WriteLTEXdata(char *filename);
 
