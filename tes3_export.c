@@ -18,17 +18,465 @@
 #include <sys/stat.h>
 
 #include "defs.h"
+#include "tes3_export.h"
+#include "tes3_vtex.h"
+#include "common.h"
 
-int Process3CELLData(char *r, int size);
-int Process3LANDData(char *r, int size);
-int Process3LTEXData(char *r, int size);
-int ExportTES3Land(char *input_esp_filename, int bpp);
-int Process3LANDData(char *r, int size);
-int ReplaceVTEX3Textures(char *vtex);
-int DeStandardizeTES3VTEX(unsigned short int vtex[16][16], unsigned short int ntex[16][16]);
-int WriteLTEXdata(char *filename);
+// Creates a RAW or BMP (opt_image_type) image called output_filename.
+// It reads the VHGT data from files called "landx.y.tmp" where x and y are the range
+// of co-ordinates matched from the ESP in the preceding function.
 
-int ExportImages()
+int HumptyImage(char *output_filename, int opt_image_type, int bpp, int opt_rescale, int opt_adjust_height, int opt_grid, int opt_scale)
+{
+    int i, j = 0;
+    int c;
+    int x, y;
+    float global_height_offset;
+    int height = 0;
+    int col_offset = 0,
+        row_sum = 0;
+    int ppc;	// Points per cell (64 for TES3, 32 for TES4).
+
+    char  h8int = 0;
+    short int h16int = 0;
+    int   h32int = 0;
+    int   Bp = bpp / 8;
+    int   bmp_offset = 0;
+    int   xdim, ydim;
+
+    char land_data[32000];
+    char vhgt_data[16384];
+    char land_filename[256];
+
+    int height_stat_min = 1048576,
+        height_stat_max = -1048576, // Record the minimum and maximum heights
+        height_stat_max_cell_x,
+        height_stat_max_cell_y,
+        height_stat_min_cell_x,
+        height_stat_min_cell_y;
+
+    FILE *fp_o,
+         *fp_land;
+
+    // Recalculate min and max x and y values.
+    if ((fp_o = fopen(output_filename, "wb")) == 0) {
+        fprintf(stderr, "Cannot create a new exported ESP file (%s): %s\n",
+            output_filename, strerror(errno));
+        exit(1);
+    }
+
+    ppc = MW_CELLSIZE;
+
+    if (opt_image_type == BMP) {
+        if (bpp == 8) {
+            WriteBMPGreyScaleHeader(fp_o, ppc*((max_x-min_x)+1), ppc*((max_y-min_y)+1), bpp);
+            bmp_offset = 1080;
+        } else {
+            WriteBMPHeader(fp_o, ppc*((max_x-min_x)+1), ppc*((max_y-min_y)+1), bpp);
+            bmp_offset = 54;
+        }
+    } else {
+        bmp_offset = 0;
+    }
+    Bp = bpp / 8;
+
+    xdim = ppc*((max_x-min_x)+1);
+    ydim = ppc*((max_y-min_y)+1);
+
+    printf("Image file has dimensions: %dx%d (%d-bit)\n", xdim, ydim, bpp);
+
+    for (y = min_y; y <= max_y; y++) {
+        for (x = min_x; x <= max_x; x++) {
+
+            memset(&vhgt_data, 0, 16384);
+
+            sprintf(land_filename, "%s/land.%d.%d.tmp", TA_TMP_DIR, x, y);
+            if ((fp_land = fopen(land_filename, "rb")) == 0) {
+
+                /************************************************************
+                 * If there's no land file exported, create a seabed instead.
+                 ***********************************************************/
+
+                for (c = 1; c < ppc+1; c++) {
+                     fseek(fp_o, bmp_offset + ((y-min_y)*xdim*Bp*ppc) + ((x-min_x)*Bp*ppc) + (0*Bp*xdim*ppc) + ((c-1)*xdim*Bp), SEEK_SET);
+                for (i = 1; i < ppc+1; i++) {
+                    if (opt_rescale) {
+                        height = 0;
+                    } else {
+                        height = (int) ((float) ((-2048 + opt_adjust_height)/8) * opt_scale);
+                    }
+
+                    if (opt_grid != -1) {
+                        if (c == 1 || i == 1) {
+                            height = opt_grid;
+                        }
+                    }
+
+                    // For KuKulzA VVD x2:
+
+                    /*
+                    //height = 0xFFFF;
+
+                    if (opt_grid != -1) {
+                        if (
+                            ((x -( 10 * (int) (x / 10)) == 0) && (i == 1 || i == 2)) ||
+                            ((y -( 10 * (int) (y / 10)) == 0) && (c == 1 || c == 2))) {
+
+                            height = opt_grid;
+                        }
+                    }
+                    */
+
+                    if (bpp == 32) {
+                        h32int = (int) height;
+                        fwrite(&h32int, 4, 1, fp_o);
+                    } else if (bpp == 16) {
+                        h16int = (short int) height;
+                        fwrite(&h16int, 2, 1, fp_o);
+                    } else if (bpp == 8) {
+                        h8int = (char) height;
+                        fwrite(&h8int, 1, 1, fp_o);
+                    }
+                }
+                }
+                continue;
+            } else {
+                fread(land_data, 16384, 1, fp_land);
+
+                //memcpy(vhgt_data, land_data+3273+6, 1093);
+                memcpy(vhgt_data, land_data, 4229);
+
+                memcpy(&global_height_offset, &vhgt_data, 4);
+
+                col_offset = vhgt_data[4]; // Gradient Grid point (0, 0) - usually 0, but ...
+                for (i = 0; i < ppc+1; i++) {
+                    if (i > 0) {
+                        fseek(fp_o, bmp_offset + ((y-min_y)*xdim*Bp*ppc) + ((x-min_x)*Bp*ppc) + (0*Bp*xdim*ppc) + ((i-1)*xdim*Bp), SEEK_SET);
+                        col_offset += vhgt_data[4+(i*(ppc+1))];
+                    }
+                    row_sum = (int) (global_height_offset) + (col_offset);
+
+                    for (j = 0; j < ppc+1; j++) {
+
+                        if (j > 0) {
+                            row_sum += vhgt_data[4+(i*(ppc+1))+j];
+                        }
+
+                        height = (int) (((float) (row_sum + (opt_adjust_height/8))) * opt_scale);
+
+                        if (height < height_stat_min) {
+                            height_stat_min = height;
+                            height_stat_min_cell_x = x;
+                            height_stat_min_cell_y = y;
+                        } else if (height > height_stat_max) {
+                            height_stat_max = height;
+                            height_stat_max_cell_x = x;
+                            height_stat_max_cell_y = y;
+                        }
+
+                        if (opt_grid != -1 && (i == 1 || j == 1)) height = opt_grid;
+
+                        if (i > 0 && j > 0) {
+                            if (bpp == 32) {
+                                h32int = (int) height;
+                                fwrite(&h32int, 4, 1, fp_o);
+                            } else if (bpp == 16) {
+                                h16int = (short int) height;
+                                fwrite(&h16int, 2, 1, fp_o);
+                            } else if (bpp == 8) {
+                                h8int = (char) height;
+                                fwrite(&h8int, 1, 1, fp_o);
+                            }
+                        }
+                    }
+                }
+                fclose(fp_land);
+            }
+        }
+    }
+    fclose(fp_o);
+
+    return 0;
+}
+
+int RescaleGreyScale(char *output_filename, int opt_image_type, int bpp, int opt_adjust_height, int opt_scale)
+{
+    int i, j;
+    int c;
+    int x, y;
+    float global_height_offset;
+    int height = 0;
+    int col_offset = 0,
+        row_sum = 0;
+    int ppc;	// Points per cell (64 for TES3, 32 for TES4).
+
+    char tmp_int[5];
+
+    char land_data[32000];
+    char vhgt_data[16384];
+
+    char land_filename[64];
+
+    FILE *fp_land;
+
+    // Recalculate min and max x and y values.
+
+    int h_low =  65536,
+        h_high = -65536;
+
+    ppc = MW_CELLSIZE;
+
+    for (y = min_y; y <= max_y; y++) {
+        for (x = min_x; x <= max_x; x++) {
+
+            memset(&vhgt_data, 0, 16384);
+
+            sprintf(land_filename, "%s/land.%d.%d.tmp", TA_TMP_DIR, x, y);
+            if ((fp_land = fopen(land_filename, "rb")) != 0) {
+                fread(land_data, 16384, 1, fp_land);
+
+                memcpy(vhgt_data, land_data, 4229);
+
+                memcpy(&global_height_offset, &vhgt_data, 4);
+
+                for (c = 1; c < ppc+1; c++) {
+                    col_offset = vhgt_data[4]; // Gradient Grid point (0, 0) - usually 0, but ...
+                    for (i = 1; i < ppc+1; i++) {
+                        col_offset += vhgt_data[4+(i*(ppc+1))];
+                        row_sum = (int) (global_height_offset) + (col_offset);
+                        for (j = 1; j < ppc+1; j++) {
+                            row_sum += vhgt_data[4+(i*(ppc+1))+j];
+
+                            if (c == i) {
+                                memcpy(tmp_int, &row_sum, 4);
+                                height = ((float) (row_sum + (opt_adjust_height/8))) * opt_scale;
+                                if (h_high < height) {
+                                    h_high = height; height_stat_max_cell_x = x;
+                                    height_stat_max_cell_y = y;
+                                }
+                                if (h_low  > height) {
+                                    h_low = height; height_stat_min_cell_x = x;
+                                    height_stat_min_cell_y = y;
+                                }
+                            }
+                        }
+                    }
+                }
+                fclose(fp_land);
+            }
+        }
+    }
+
+    // Now recalculate the scaling values from the range available.
+
+    // First offset the heights so the lowest point is 0.
+    if (h_low < 0) {
+        opt_adjust_height = (int) ((float) (opt_adjust_height/8) - ((float) h_low / opt_scale)) * 8;
+    }
+
+    opt_scale = opt_scale / (float) ((float) (h_high - h_low) / (float) 255.01);
+
+    printf("\nRescaling heights for 8-bit Greyscale:\n Max height detected: %d\n Min height detected: %d\n"
+        " Calculated Height offset = %d\n Calculated Scale = %f\n\n",
+            h_high, h_low, opt_adjust_height, opt_scale);
+
+    return 0;
+}
+
+int HumptyVCLR(char *output_filename, int opt_grid)
+{
+    int i, j;
+    int c;
+    int x, y;
+    int rgb = 0xFFFFFFFF;
+    char bgr[4],
+         rgb_c[4];
+    int ppc;	// Points per cell (64 for TES3, 32 for TES4).
+
+    int   xdim;
+
+    char land_data[32000];
+    char vclr_data[16384];
+
+    char land_filename[64];
+
+    FILE *fp_o,
+         *fp_land;
+
+    // Recalculate min and max x and y values.
+
+    if ((fp_o = fopen(output_filename, "wb")) == 0) {
+        fprintf(stderr, "Cannot create a new exported ESP file (%s): %s\n",
+            output_filename, strerror(errno));
+        exit(1);
+    }
+
+    ppc = MW_CELLSIZE;
+
+    xdim = ppc*((max_x-min_x)+1);
+
+    WriteBMPHeader(fp_o, ppc*((max_x-min_x)+1), ppc*((max_y-min_y)+1), 24);
+
+    printf("Vertex Colour Image file has dimensions: %dx%d (24-bit)\n", ppc*((max_x-min_x)+1), ppc*((max_y-min_y)+1));
+
+    for (y = min_y; y <= max_y; y++) {
+        for (x = min_x; x <= max_x; x++) {
+
+            sprintf(land_filename, "%s/vclr.%d.%d.tmp", TA_TMP_DIR, x, y);
+            if ((fp_land = fopen(land_filename, "rb")) == 0) {
+
+                /************************************************************
+                 * If there's no land file exported, create a seabed instead.
+                 ***********************************************************/
+
+                for (c = 1; c < ppc+1; c++) {
+                     fseek(fp_o, 54+ ((y-min_y)*xdim*3*ppc) + ((x-min_x)*3*ppc) + ((c-1)*xdim*3), SEEK_SET);
+                for (i = 1; i < ppc+1; i++) {
+                    rgb = 0xFFFFFFFF;
+                    if (opt_grid != -1) {
+                        if (c == 1 || i == 1) rgb = opt_grid;
+                    }
+                    fwrite(&rgb, 3, 1, fp_o);
+                }
+                }
+                continue;
+            } else {
+                memset(&vclr_data, 0, 12675);
+                fread(land_data, 16384, 1, fp_land);
+
+                memcpy(vclr_data, land_data, 12675);
+
+                for (c = 1; c < ppc+1; c++) {
+                     fseek(fp_o, 54+ ((y-min_y)*xdim*3*ppc) + ((x-min_x)*3*ppc) + ((c-1)*xdim*3), SEEK_SET);
+                for (i = 1; i < ppc+1; i++) {
+                    for (j = 1; j < ppc+1; j++) {
+                        if (c == i) {
+                            rgb = 0xFFFFFFFF;
+                            //memset(bgr, 255, 4);
+                            memcpy(&bgr, vclr_data + (i*3*(ppc+1)) + (3*j), 3);
+                            if (opt_grid != -1) {
+                                if (c == 1 || j == 1) memcpy(bgr, &opt_grid, 3);
+                            }
+                            rgb_c[2] = bgr[0];
+                            rgb_c[1] = bgr[1];
+                            rgb_c[0] = bgr[2];
+                            fwrite(&rgb_c, 3, 1, fp_o);
+                        }
+                    }
+                }
+                }
+                fclose(fp_land);
+            }
+        }
+    }
+    fclose(fp_o);
+
+    return 0;
+}
+
+int HumptyVTEX3(char *output_filename, int layer)
+{
+    int i, j;
+    int x, y;
+    int bsize = 0;
+    int bmp_offset = 0;
+    int ppc,	// Points per cell (64 for TES3, 32 for TES4).
+        Bp,
+        ipad,
+        opad;
+
+    int xdim;
+
+    unsigned int tex = 0;
+
+    char vtex3_data[4096];
+
+    char land_filename[64];
+
+    FILE *fp_o,
+         *fp_land;
+
+    // Recalculate min and max x and y values.
+
+    if ((fp_o = fopen(output_filename, "wb")) == 0) {
+        fprintf(stderr, "Cannot create a new TES3 VTEX placement BMP image file! (%s): %s\n",
+            output_filename, strerror(errno));
+        exit(1);
+    }
+
+    putchar('\n');
+    ppc = 16;
+    Bp = 2;
+    ipad = 0;
+    bsize = (ppc+ipad)*ppc*Bp;
+    bmp_offset = 0;
+    WriteBMPHeader(fp_o, ppc*((max_x-min_x)+1), ppc*((max_y-min_y)+1), 16);
+    printf("TES3 VTEX placement image has dimensions: %dx%d (%d-bit)\n", ppc*((max_x-min_x)+1), ppc*((max_y-min_y)+1), 8*Bp);
+
+    xdim = ppc*((max_x-min_x)+1);
+
+    opad = (int) (4*( ((float) (xdim*Bp) /4) - (float) ((int) ((xdim)*Bp/4)) )) ;
+
+    for (y = min_y; y <= max_y; y++) {
+        for (x = min_x; x <= max_x; x++) {
+
+            sprintf(land_filename, "%s/vtex3.%d.%d.tmp", TA_TMP_DIR, x, y);
+
+            if ((fp_land = fopen(land_filename, "rb")) == 0) {
+
+                /************************************************************
+                 * If there's no land file exported, create a seabed instead.
+                 ***********************************************************/
+
+                for (i = 0; i < ppc; i++) {
+                    fseek(fp_o, 54 + ((y-min_y)*(xdim*Bp*ppc+(ppc*opad))) + ((x-min_x)*Bp*ppc) + ((i)*xdim*Bp) + (i*opad), SEEK_SET);
+                    for (j = 0; j < ppc; j++) {
+                        fwrite(&tex, 3, 1, fp_o);
+                    }
+                    fwrite(&tex, opad, 1, fp_o);
+                }
+                continue;
+            } else {
+                memset(&vtex3_data, 0, bsize);
+                fseek(fp_land, bmp_offset, SEEK_SET);
+                fread(vtex3_data, bsize, 1, fp_land);
+
+                for (i = 0; i < ppc; i++) {
+                    fseek(fp_o, 54 + ((y-min_y)*(xdim*Bp*ppc+(ppc*opad))) + ((x-min_x)*Bp*ppc) + ((i)*xdim*Bp) + (i*opad), SEEK_SET);
+                    fwrite(vtex3_data+i*(ipad+ppc*Bp), ppc*Bp, 1, fp_o);
+                    fwrite(&tex, opad, 1, fp_o);
+                }
+                fclose(fp_land);
+            }
+        }
+    }
+    fclose(fp_o);
+
+    return 0;
+}
+
+
+int CleanUp()
+{
+    int i;
+
+    char filename[128];
+
+    for (i = 0; i < cleanup_list_count; i++) {
+        sprintf(filename, "%s/land.%d.%d.tmp", TA_TMP_DIR, cleanup_list_x[i], cleanup_list_y[i]);
+        unlink(filename);
+        sprintf(filename, "%s/vclr.%d.%d.tmp", TA_TMP_DIR, cleanup_list_x[i], cleanup_list_y[i]);
+        unlink(filename);
+        sprintf(filename, "%s/vtex3.%d.%d.tmp", TA_TMP_DIR, cleanup_list_x[i], cleanup_list_y[i]);
+        unlink(filename);
+    }
+
+    rmdir(TA_TMP_DIR);
+
+    return 0;
+}
+
+int ExportImages(int opt_image_type, int opt_bpp, int opt_vclr, int opt_grid, int opt_vtex, int opt_adjust_height, int opt_rescale)
 {
     int i;
     char dir_name[128];
@@ -47,74 +495,30 @@ int ExportImages()
         printf("You didn't specify an image type (-p 1 or 2). I'll choose BMP for you ...\n");
     }
 
-    if (opt_vtex && opt_tes_ver >= 4) {
-        ltex.count = 1;	// 0 will be used when there's no texture.
-        maxlayer = 0;
-
-        if (opt_vtex >= 4) {
-                // Delete any old VTEX4 filenames to avoid confusion when doing a re-import.
-                    for (i = 0; i < 9; i++) {
-                            sprintf(vtex_layer_filename, TA_VTEX4_OUT, i);
-                printf("Deleting %s\n", vtex_layer_filename);
-                            unlink(vtex_layer_filename);
-                    }
-        }
-
-                for (i = 0; i < 9; i++) {
-            sprintf(dir_name, "%s/%d", TA_TMP_DIR, i);
-            mkdir(dir_name, 0777);
-                }
-    }
-
-    if (opt_cell_data && opt_tes_ver >= 4) {
-        printf("Deleting %s\n", TA_CELL_IN);
-        printf("Deleting %s\n", TA_CELL_BMP);
-        unlink(TA_CELL_IN);
-        unlink(TA_CELL_BMP);
-        sprintf(dir_name, "%s/%s", TA_TMP_DIR, TA_CELL_TMP);
-        unlink(dir_name);
-    }
-
     for (i = 0; i < input_files.count; i++) {
-        if (opt_tes_ver == 3) {
-            printf("\nRunning TES3 exporter:\n");
-            ExportTES3Land(input_files.filename[i], opt_bpp);
-        } else { // TES4
-            printf("\nRunning TES4 exporter:\n");
-            // ExportTES4Land(input_files.filename[i], opt_worldspace, opt_bpp);
-        }
+        printf("\nRunning TES3 exporter:\n");
+        ExportTES3Land(input_files.filename[i], opt_bpp, opt_vclr, opt_vtex);
     }
 
     if (opt_vclr) {
         printf("\n\nGenerating BMP of VCLR data: %s ... \n", TA_VCLR_OUT);
-        HumptyVCLR(TA_VCLR_OUT, opt_tes_ver);
+        HumptyVCLR(TA_VCLR_OUT, opt_grid);
     }
 
-    if (opt_vtex) {  // == 3
-        if (opt_tes_ver == 3) {
-            printf("\n\nGenerating BMP of VTEX placement data: %s ... \n", TA_VTEX3_OUT);
-            HumptyVTEX3(TA_VTEX3_OUT, opt_tes_ver, 1);
-        } else {
-            for (i = 0; i < maxlayer; i++) {
-                sprintf(vtex_layer_filename, "tesannwyn-vtex4-%d.bmp", i);
-                HumptyVTEX3(vtex_layer_filename, opt_tes_ver, i);
-            }
-        }
-    }
-
-    if (opt_lod) {
-        // HumptyLOD2();
+    if (opt_vtex) {
+        printf("\n\nGenerating BMP of VTEX placement data: %s ... \n", TA_VTEX3_OUT);
+        HumptyVTEX3(TA_VTEX3_OUT, 1);
     }
 
     if (opt_image_type == RAW) {
         printf("\n\nGenerating new RAW output file: %s ...\n", TA_RAW_OUT);
-        HumptyImage(TA_RAW_OUT, opt_image_type, opt_tes_ver, opt_bpp);
+        HumptyImage(TA_RAW_OUT, opt_image_type, opt_bpp, opt_rescale, opt_adjust_height, opt_grid);
     } else if (opt_image_type == BMP) {
         printf("\n\nGenerating new BMP output file: %s ...\n", TA_BMP_OUT);
         if (opt_rescale) {
-            RescaleGreyScale(TA_BMP_OUT, opt_image_type, opt_tes_ver, opt_bpp);
+            RescaleGreyScale(TA_BMP_OUT, opt_image_type, opt_bpp, opt_adjust_height);
         }
-        HumptyImage(TA_BMP_OUT, opt_image_type, opt_tes_ver, opt_bpp);
+        HumptyImage(TA_BMP_OUT, opt_image_type, opt_bpp, opt_rescale, opt_adjust_height, opt_grid);
     }
 
     CleanUp();
@@ -135,7 +539,7 @@ int ExportImages()
     return 0;
 }
 
-int ExportTES3Land(char *input_esp_filename, int bpp)
+int ExportTES3Land(char *input_esp_filename, int bpp, int opt_vclr, int opt_vtex)
 {
     int size;	/* Size of current record.             */
 
@@ -206,7 +610,7 @@ int ExportTES3Land(char *input_esp_filename, int bpp)
 
         if (strncmp(s, "LAND", 4) == 0) {
             putchar(s[0]);
-            Process3LANDData(or + 16, size-16);
+            Process3LANDData(or + 16, size-16, opt_vclr, opt_vtex);
         }  else if (strncmp(s, "LTEX", 4) == 0) {
             putchar(s[0]);
             Process3LTEXData(or + 16, size-16);
@@ -236,7 +640,7 @@ int ExportTES3Land(char *input_esp_filename, int bpp)
 ** LAND (4 bytes) + Length (4 bytes) + X (4 bytes) + Y (4 bytes).
 ****************************************************************/
 
-int Process3LANDData(char *r, int size)
+int Process3LANDData(char *r, int size, int opt_vclr, int opt_vtex)
 {
     int pos = 0,
         nsize = 0,
@@ -326,7 +730,7 @@ int Process3LANDData(char *r, int size)
                 ReplaceVTEX3Textures(r + pos + 8);
             }
 
-            StandardizeTES3VTEX((unsigned short int (*)[16])r + pos + 8, ntex);
+            StandardizeTES3VTEX(r + pos + 8, ntex);
 
             fwrite(ntex, 512, 1, fp_land);
 

@@ -23,24 +23,8 @@
 #include <unistd.h>
 
 #include "defs.h"
+#include "tes3_vtex.h"
 
-int GetFormIDForFilename(char *tex_filename, char *ltex_name, char *ltex_filename, char *FormID);
-void GetVTEX34Cell(unsigned short int vtex[16][16], int ntex[34][34], int cell);
-int Match34TexturesQuad(int vtex4[34][34], char *vtex_record, int *vtex_size, int quad);
-int GetFormIDFromTEXNum(unsigned short int texnum, char *FormID);
-int FormIDToString(char *s, char *formid);
-int StringToReverseFormID(char *s, char *formid);
-int GetFormIDForFilename(char *tex_filename, char *ltex_name, char *ltex_filename, char *FormID);
-int Process3LTEXData(char *r, int size);
-int ReadLTEX3(char *filename);
-void GetVTEX34Cell(unsigned short int vtex[16][16], int ntex[34][34], int cell) ;
-int Match34TexturesQuad(int vtex4[34][34], char *vtex_record, int *vtex_size, int quad);
-int GetFormIDFromTEXNum(unsigned short int texnum, char *FormID);
-int FormIDToString(char *s, char *formid);
-int StringToReverseFormID(char *s, char *formid);
-int GetFormIDForFilename(char *tex_filename, char *ltex_name, char *ltex_filename, char *FormID) ;
-int Process3LTEXData(char *r, int size);
-int ReadLTEX3(char *filename);
 
 int Process3LTEXData(char *r, int size)
 {

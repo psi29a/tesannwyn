@@ -17,34 +17,15 @@
 #include <string.h>
 
 #include "defs.h"
+#include "tes3_import.h"
+#include "tes3_export.h"
 
-int StandardizeRAW(char *input_filename, char *output_filename, int *sx, int *sy, int bpp, int std);
-int StandardizeBMP2RAW(char *input_filename, char *output_filename, int *sx, int *sy, int *Bp, int std);
-int DecompressZLIBStream(char *input, int input_size, char output[], int *output_size);
-int CompressZLIBStream(char *input, int input_size, char output[], int *output_size, int compress_level);
-int ReadScaleVTEX3(char *s_vtex, float scale, int cx, int cy, int y, int sx, int sy, FILE *fp_vtex);
-int ImportImage(char *input_filename);
-int CatchGradientOverflows(int *gradient);
-int WriteTES3LANDRecordR(int cx, int cy, int opt_adjust_height, int image[66][66], FILE *fp_out);
-int WriteTES3LANDRecord(int cx, int cy, int opt_adjust_height, int image[66][66], char vclr[66][66][3], short unsigned int vtex3[16][16], FILE *fp_out);
-int WriteTES3CELLRecord(int cx, int cy, FILE *fp_out);
-int WriteTES3CELLRecordN(int cx, int cy, FILE *fp_out);
-int WriteTES3Header(FILE *fp_out);
-int ShowUsageExit(char *argv0);
-int StandardizeRAW(char *input_filename, char *output_filename, int *sx, int *sy, int Bp, int std);
-int StandardizeBMP2RAW(char *input_filename, char *output_filename, int *sx, int *sy, int *Bp, int std);
-int DecodeOptIgnoreLand(char *s, int *opt_ignore_land_lower, int *opt_ignore_land_upper);
-int DecodeLimits(char *s, int *opt_lower_limit, int *opt_upper_limit);
-int DecodeDimensions(char *s, int *opt_sx, int *opt_sy);
-int DecodeFilenames(char *s);
-int DecodeUserTexture(char *s, char *name, char *fname);
-int WriteTES3LTEX(FILE *fp_out);
-int HexToInt(char *hex);
-int ReadVTEX3(char *s_vtex, int tex_size, int cx, int cy, int y, int sx, int sy, FILE *fp_vtex);
-int GetTimeBasedFormID(void) ;
-int WriteUserTES4LTEXRecord(FILE *fp_out, char *name, char *fname);
-
-int ImportImage(char *input_filename)
+int ImportImage(char *input_filename, int opt_bpp, int opt_vclr, int opt_sx,
+                int opt_sy, int opt_image_type, int opt_vtex, int opt_rescale,
+                int opt_adjust_height, int opt_limit, int opt_lower_limit,
+                int opt_upper_limit, int opt_x_cell_offset,
+                int opt_y_cell_offset, int opt_ignore_land_upper,
+                int opt_ignore_land_lower, char opt_texture[], int opt_scale)
 {
     int i,
         x,
@@ -89,7 +70,19 @@ int ImportImage(char *input_filename)
          *fp_vclr,
          *fp_vtex[9];
 
+    int height_stat_min = 1048576,
+        height_stat_max = -1048576, // Record the minimum and maximum heights
+        height_stat_max_cell_x,
+        height_stat_max_cell_y,
+        height_stat_min_cell_x,
+        height_stat_min_cell_y;
+
     int cellsize = 0;
+
+    int total_overflows = 0,
+        total_underflows = 0;
+
+    int total_records = 0;
 
     Bp = opt_bpp / 8; // (wince at the capital) Bytes per pixel (opt_bpp is bits per pixel!)
 
@@ -102,14 +95,14 @@ int ImportImage(char *input_filename)
         vclr_sx = opt_sx;
         vclr_sy = opt_sy;
 
-        StandardizeBMP2RAW(TA_VCLR_IN, TA_TMP_VCLR_RAW, &vclr_sx, &vclr_sy, &vclr.Bp, MW_CELLSIZE);
+        StandardizeBMP2RAW(TA_VCLR_IN, TA_TMP_VCLR_RAW, &vclr_sx, &vclr_sy, &vclr.Bp, MW_CELLSIZE, opt_adjust_height, opt_scale);
         printf("Import VCLR BMP has dimensions %dx%d (%d-bit)\n", vclr_sx, vclr_sy, 8*vclr.Bp);
     }
 
     if (opt_image_type == RAW) {
-        StandardizeRAW(input_filename, TA_TMP_RAW, &opt_sx, &opt_sy, Bp, MW_CELLSIZE);
+        StandardizeRAW(input_filename, TA_TMP_RAW, &opt_sx, &opt_sy, Bp, MW_CELLSIZE, opt_adjust_height, opt_scale);
     } else {
-        StandardizeBMP2RAW(input_filename, TA_TMP_RAW, &opt_sx, &opt_sy, &Bp, MW_CELLSIZE);
+        StandardizeBMP2RAW(input_filename, TA_TMP_RAW, &opt_sx, &opt_sy, &Bp, MW_CELLSIZE, opt_adjust_height, opt_scale);
         printf("Imported BMP has dimensions %dx%d (%d-bit)\n", opt_sx, opt_sy, Bp*8);
     }
 
@@ -123,9 +116,9 @@ int ImportImage(char *input_filename)
 
     WriteTES3Header(fp_out);
     if (opt_texture[0] != '\0') {
-        WriteTES3LTEX(fp_out);
+        WriteTES3LTEX(fp_out, &total_records);
     } else if (opt_vtex > 0) {
-        WriteTES3LTEX(fp_out);
+        WriteTES3LTEX(fp_out, &total_records);
     }
     if (opt_vtex > 0) {
         tex_size = MW_TEXSIZE;
@@ -161,22 +154,15 @@ int ImportImage(char *input_filename)
     x_range = (opt_sx)* Bp;
     vclr.x_range = (vclr_sx) * vclr.Bp;
 
-    if (opt_tes_ver <= 3) {
-        cellsize = MW_CELLSIZE;
-        x_cell_range = opt_sx / MW_CELLSIZE;
-        y_cell_range = opt_sy / MW_CELLSIZE;
-    } else if (opt_tes_ver >= 4) {
-        cellsize = OB_CELLSIZE;
-        x_cell_range = opt_sx / OB_CELLSIZE;
-        y_cell_range = opt_sy / OB_CELLSIZE;
-    }
+    cellsize = MW_CELLSIZE;
+    x_cell_range = opt_sx / MW_CELLSIZE;
+    y_cell_range = opt_sy / MW_CELLSIZE;
 
     for (cy = 0; cy < y_cell_range; cy++) {
         for (cx = 0; cx < x_cell_range; cx++) {
             memset(&image, 0, sizeof(image));
             memset(&vclr_image, 0, sizeof(vclr_image));
             for (y = 0; y < cellsize+2; y++) {
-
                 fseek(fp_in, cx*cellsize*Bp + (cy*(cellsize)*(x_range+(2*Bp))) + (y*(x_range+(2*Bp))), SEEK_SET);
                 fread(s, (cellsize+2)*Bp, 1, fp_in);
 
@@ -211,7 +197,6 @@ int ImportImage(char *input_filename)
                     memcpy(&vtex_image[y][x], s_vtex + (2*x), 2);
                 }
             }
-            
             for (x = 0; x < cellsize+2; x++) {
                 for (y = 0; y < cellsize+2; y++) {
 
@@ -240,7 +225,6 @@ int ImportImage(char *input_filename)
                     }
                 }
             }
-
             if (opt_ignore_land_upper || opt_ignore_land_lower) {
                 flag_ignore_land = 1;
                 for (x = 0; x < cellsize+1; x++) {
@@ -256,7 +240,7 @@ int ImportImage(char *input_filename)
                 flag_ignore_land = 0;
             } else {
                 WriteTES3CELLRecord(cx + opt_x_cell_offset, cy + opt_y_cell_offset, fp_out);
-                WriteTES3LANDRecord(cx + opt_x_cell_offset, cy + opt_y_cell_offset, opt_adjust_height, (int (*)[66])image, vclr_image, vtex_image, fp_out);
+                WriteTES3LANDRecord(cx + opt_x_cell_offset, cy + opt_y_cell_offset, opt_adjust_height, &image, vclr_image, vtex_image, fp_out, opt_vtex, opt_vclr, &total_overflows, &total_underflows, &opt_texture);
             }
         }
     }
@@ -295,24 +279,24 @@ int ImportImage(char *input_filename)
     return 0;
 }
 
-int CatchGradientOverflows(int *gradient)
+int CatchGradientOverflows(int *gradient, int *total_overflows, int *total_underflows)
 {
     if (*gradient > 127) {
         //printf("Gradient corrected: %d\n", *gradient);
         *gradient = 127;
-        total_overflows++;
+        *total_overflows++;
         return 1;
     } else if (*gradient < -128) {
         //printf("Gradient corrected: %d\n", *gradient);
         *gradient = -128;
-        total_underflows--;
+        *total_underflows--;
         return 1;
     }
 
     return 0;
 }
 
-int WriteTES3LANDRecord(int cx, int cy, int opt_adjust_height, int image[66][66], char vclr[66][66][3], short unsigned int vtex3[16][16], FILE *fp_out)
+int WriteTES3LANDRecord(int cx, int cy, int opt_adjust_height, int image[66][66], char vclr[66][66][3], short unsigned int vtex3[16][16], FILE *fp_out, int opt_vtex, int opt_vclr, int *total_overflows, int *total_underflows, char opt_texture[])
 {
     int i, x, y;
 
@@ -336,7 +320,7 @@ int WriteTES3LANDRecord(int cx, int cy, int opt_adjust_height, int image[66][66]
     for (y = 1; y < 65; y++) {
         for (x = 1; x < 65; x++) {
             igrad[y][x] = image[y][x] - image[y][x-1];
-            CatchGradientOverflows(&igrad[y][x]);
+            CatchGradientOverflows(&igrad[y][x], total_overflows, total_underflows);
         }
     }
 
@@ -348,7 +332,7 @@ int WriteTES3LANDRecord(int cx, int cy, int opt_adjust_height, int image[66][66]
     // Calculate Row 0.
     for (x = 1; x < 65 ; x++) {
         igrad[0][x] = image[0][x] - image[0][x-1];
-        CatchGradientOverflows(&igrad[0][x]);
+        CatchGradientOverflows(&igrad[0][x], total_overflows, total_underflows);
     }
 
     for (y = 0; y < 65; y++) {
@@ -592,41 +576,7 @@ int WriteTES3Header(FILE *fp_out)
 
 }
 
-/************************************************************************
- ** ShowUsageExit: Show how to use the command line arguments, then exit.
- ***********************************************************************/
-int ShowUsageExit(char *argv0)
-{
-        fprintf(stderr, "Please see the associated Readme document for more detailed help.\n\n"
-            "Usage: %s [options] filename\n\n"
-            "\tfilename: The image filename you want to import or ESP/ESM to export.\n\n"
-            "\t-i (num or name): Import an image to a create a TES ESP (3 or 4 or 5, or Skyrim, Fallout3, FalloutNV, Oblivion, Morrowind).\n"
-            "\t-c: Import/Export the VCLR vertex colour image as a BMP called %s.\n"
-            "\t-T (3 or 4): Import/Export a TES3 or TES4 texture placement map a BMP called %s.\n"
-            "\t-d (numxnum): X and Y dimensions of import image. e.g. 2688x1344 (default is 1024x1024).\n"
-                        "\t-p (num): Type of image file ( 1 = RAW, 2 = BMP, 3 = CSV).\n"
-                        "\t-b (num): Bits per pixel of the input/output image RAW/BMP image file. For BMP, 8 bit implies Greyscale.\n"
-                        "\t-x (num): The Bottom-Left cell X co-ordinate will start here (default 0).\n"
-                        "\t-y (num): The Bottom-Left cell Y co-ordinate will start here (default 0).\n"
-                        "\t-h (num): Offset height of land by this number of game units.\n"
-                        "\t-s (num): Scale land height by this number (floating point allowed).\n"
-            "\t-l (num,num): Limit all imported height to within these lower,upper limits (e.g. -2048,32768).\n"
-            "\t-o (num-num): Do not import land whose land is all between these heights (e.g. -2048 or -4096-1024).\n"
-            "\t-g: Draw square cell sized grids on all image exports.\n"
-            "\t-t (num/FormID): Texture the entire landscape in a texture number (TES3) or texture FormID (TES4).\n"
-            "\t-r: (Greyscale 8-bit BMP only). Automatically rescale the Greyscale export between 0-255. (No parameter required).\n"
-                        "\t-q : Quiet mode: Outputs less so runs faster in a Windows Console.\n"
-                        "\t-v : Display current Version, then exit.\n",
-                        argv0, TA_VCLR_IN, TA_VTEX3_OUT
-    );
-
-        exit(1);
-
-    return 1;
-}
-
-
-int StandardizeRAW(char *input_filename, char *output_filename, int *sx, int *sy, int Bp, int std)
+int StandardizeRAW(char *input_filename, char *output_filename, int *sx, int *sy, int Bp, int std, int opt_adjust_height, int opt_scale)
 {
     int i, j;
     int sxx = 0, syx = 0;
@@ -709,7 +659,7 @@ int StandardizeRAW(char *input_filename, char *output_filename, int *sx, int *sy
 
 // Turn a BMP file in to a 32-bit RAW file of the same dimensions.
 
-int StandardizeBMP2RAW(char *input_filename, char *output_filename, int *sx, int *sy, int *Bp, int std)
+int StandardizeBMP2RAW(char *input_filename, char *output_filename, int *sx, int *sy, int *Bp, int std, int opt_adjust_height, int opt_scale)
 {
     int i, j;
 
@@ -818,7 +768,7 @@ int StandardizeBMP2RAW(char *input_filename, char *output_filename, int *sx, int
     return 0;
 }
 
-int WriteTES3LTEX(FILE *fp_out)
+int WriteTES3LTEX(FILE *fp_out, int *total_records)
 {
         int i = 0,
             p = 0,
@@ -884,13 +834,8 @@ int ReadVTEX3(char *s_vtex, int tex_size, int cx, int cy, int y, int sx, int sy,
     int x_size;
     int y_size;
 
-    if (opt_tes_ver == 3) {
-        x_size = 16;
-        y_size = 16;
-    } else {
-        x_size = 8;
-        y_size = 8;
-    }
+    x_size = 16;
+    y_size = 16;
 
     x_range = sx / 4; // 672 across
 
