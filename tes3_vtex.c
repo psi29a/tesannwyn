@@ -25,7 +25,6 @@
 #include "defs.h"
 #include "tes3_vtex.h"
 
-
 int Process3LTEXData(char *r, int size)
 {
 	short unsigned int i;
@@ -292,9 +291,6 @@ int StringToReverseFormID(char *s, char *formid)
 
         return 0;
 }
-
-//int GetFormIDForFilename(char *tex_filename, char *FormID)
-
 
 int GetFormIDForFilename(char *tex_filename, char *ltex_name, char *ltex_filename, char *FormID) 
 {

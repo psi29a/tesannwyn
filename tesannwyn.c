@@ -27,9 +27,7 @@
 #include <getopt.h>
 
 #include "defs.h"
-//#include "funcs.h"
 
-//#include "common.c"
 #include "tes3_import.h"
 #include "tes3_export.h"
 #include "tes3_vtex.h"

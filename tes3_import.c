@@ -18,7 +18,6 @@
 
 #include "defs.h"
 #include "tes3_import.h"
-#include "tes3_export.h"
 
 int ImportImage(char *input_filename, int opt_bpp, int opt_vclr, int opt_sx,
                 int opt_sy, int opt_image_type, int opt_vtex, int opt_rescale,

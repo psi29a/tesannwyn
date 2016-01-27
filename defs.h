@@ -86,21 +86,19 @@ struct cell_data {
 
 char rule[5][1024];
 
-int min_x = 32768,
+static int min_x = 32768,
     max_x = -32768,
     min_y = 32768,
     max_y = -32768;
 
 char log_message[512];
 char input_esp_filename[128];
-int  ro = 24;                       // TES4 Record offset. Oblivion uses 20. Fallout3 uses 24.
 
 /***************************
 * Just some running totals.
 **************************/
 
-int total_cells = 0,                /* Total CELL records found in the file. */
-    total_land = 0,                 /* Total LAND records found in the file. */
+static int total_cells = 0,                /* Total CELL records found in the file. */
     total_records_changed = 0,      /* LAND or CELL records changed/copied.  */
     total_cells_copied = 0,
     total_land_copied = 0,
@@ -115,7 +113,7 @@ int total_cells = 0,                /* Total CELL records found in the file. */
 char *last_cell_data;
 
 
-int i = 0,                     /* A loop variable.                                                          */
+static int i = 0,                     /* A loop variable.                                                          */
     verbose_mode = 0,          /* Command line option: Option to produce an extensive log file.             */
     list_cell_mode = 0,        /* Command line option: Option to produce a file listing the plugin's cells. */
     show_rules_mode = 0,       /* Command line option: Option to display verbose form of rules then exit.   */
