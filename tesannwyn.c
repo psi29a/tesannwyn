@@ -331,7 +331,8 @@ int main(int argc, char *argv[])
         ImportImage(input_files.filename[0], opt_bpp, opt_vclr, opt_sx, opt_sy,
                 opt_image_type, opt_vtex, opt_rescale, opt_adjust_height,
                 opt_limit, opt_lower_limit, opt_upper_limit, opt_x_cell_offset,
-                opt_y_cell_offset, opt_ignore_land_upper, opt_ignore_land_lower);
+                opt_y_cell_offset, opt_ignore_land_upper, opt_ignore_land_lower,
+                opt_texture, opt_scale);
     } else {
         ExportImages(opt_image_type, opt_bpp, opt_vclr, opt_grid, opt_vtex,
                      opt_adjust_height, opt_rescale);
