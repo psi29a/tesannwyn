@@ -26,6 +26,19 @@
 // It reads the VHGT data from files called "landx.y.tmp" where x and y are the range
 // of co-ordinates matched from the ESP in the preceding function.
 
+/* TODO: try to remove globals */
+int cleanup_list_x[1048576];
+int cleanup_list_y[1048576];
+int cleanup_list_count = 0;
+int height_stat_min = 1048576,
+    height_stat_max = -1048576, // Record the minimum and maximum heights
+    height_stat_max_cell_x,
+    height_stat_max_cell_y,
+    height_stat_min_cell_x,
+    height_stat_min_cell_y;
+
+
+
 int HumptyImage(char *output_filename, int opt_image_type, int bpp, int opt_rescale, int opt_adjust_height, int opt_grid, int opt_scale)
 {
     int i, j = 0;
@@ -47,13 +60,6 @@ int HumptyImage(char *output_filename, int opt_image_type, int bpp, int opt_resc
     char land_data[32000];
     char vhgt_data[16384];
     char land_filename[256];
-
-    int height_stat_min = 1048576,
-        height_stat_max = -1048576, // Record the minimum and maximum heights
-        height_stat_max_cell_x,
-        height_stat_max_cell_y,
-        height_stat_min_cell_x,
-        height_stat_min_cell_y;
 
     FILE *fp_o,
          *fp_land;
@@ -222,7 +228,11 @@ int RescaleGreyScale(char *output_filename, int opt_image_type, int bpp, int opt
     // Recalculate min and max x and y values.
 
     int h_low =  65536,
-        h_high = -65536;
+        h_high = -65536,
+        height_stat_max_cell_x,
+        height_stat_max_cell_y,
+        height_stat_min_cell_x,
+        height_stat_min_cell_y;
 
     ppc = MW_CELLSIZE;
 
@@ -251,11 +261,13 @@ int RescaleGreyScale(char *output_filename, int opt_image_type, int bpp, int opt
                                 memcpy(tmp_int, &row_sum, 4);
                                 height = ((float) (row_sum + (opt_adjust_height/8))) * opt_scale;
                                 if (h_high < height) {
-                                    h_high = height; height_stat_max_cell_x = x;
+                                    h_high = height; 
+                                    height_stat_max_cell_x = x;
                                     height_stat_max_cell_y = y;
                                 }
                                 if (h_low  > height) {
-                                    h_low = height; height_stat_min_cell_x = x;
+                                    h_low = height; 
+                                    height_stat_min_cell_x = x;
                                     height_stat_min_cell_y = y;
                                 }
                             }
@@ -456,9 +468,10 @@ int HumptyVTEX3(char *output_filename, int layer)
 }
 
 
-int CleanUp()
+int CleanUp(int cleanup_list_x[], int cleanup_list_y[])
 {
-    int i;
+    int i,
+        cleanup_list_count = 0;
 
     char filename[128];
 
@@ -478,11 +491,10 @@ int CleanUp()
 
 int ExportImages(int opt_image_type, int opt_bpp, int opt_vclr, int opt_grid, int opt_vtex, int opt_adjust_height, int opt_rescale)
 {
-    int i;
+    int i,
+        cleanup_list_count = 0;
     char dir_name[128];
     char vtex_layer_filename[128];
-
-    cleanup_list_count = 0;
 
     ltex.count = 0;
 
@@ -512,16 +524,16 @@ int ExportImages(int opt_image_type, int opt_bpp, int opt_vclr, int opt_grid, in
 
     if (opt_image_type == RAW) {
         printf("\n\nGenerating new RAW output file: %s ...\n", TA_RAW_OUT);
-        HumptyImage(TA_RAW_OUT, opt_image_type, opt_bpp, opt_rescale, opt_adjust_height, opt_grid);
+        HumptyImage(TA_RAW_OUT, opt_image_type, opt_bpp, opt_rescale, opt_adjust_height, opt_grid, opt_rescale);
     } else if (opt_image_type == BMP) {
         printf("\n\nGenerating new BMP output file: %s ...\n", TA_BMP_OUT);
         if (opt_rescale) {
-            RescaleGreyScale(TA_BMP_OUT, opt_image_type, opt_bpp, opt_adjust_height);
+            RescaleGreyScale(TA_BMP_OUT, opt_image_type, opt_bpp, opt_adjust_height, opt_rescale);
         }
-        HumptyImage(TA_BMP_OUT, opt_image_type, opt_bpp, opt_rescale, opt_adjust_height, opt_grid);
+        HumptyImage(TA_BMP_OUT, opt_image_type, opt_bpp, opt_rescale, opt_adjust_height, opt_grid, opt_rescale);
     }
 
-    CleanUp();
+    CleanUp(cleanup_list_x, cleanup_list_y);
 
         printf("\n\nHighest point was %d THU (%d Game Units) = %f metres    [Cell (%d,%d)]\n",
                 height_stat_max, height_stat_max * 8, ((float) height_stat_max * 0.114), height_stat_max_cell_x, height_stat_max_cell_y);
@@ -855,7 +867,7 @@ int WriteLTEXdata(char *filename)
     if ((fp_lt = fopen(filename, "wb")) == 0) {
         fprintf(stderr, "Unable to create my TES3 LTEX reference file (%s): %s\n",
             filename, strerror(errno));
-        CleanUp();
+        CleanUp(cleanup_list_x, cleanup_list_y);
         exit(1);
     }
 

@@ -69,7 +69,7 @@ int main(int argc, char *argv[])
     int cleanup_list_count = 0;
 
     char c,
-         s[256];
+         s[256],
          opt_worldspace[128];
 
     char opt_ignore_land_string[64],
