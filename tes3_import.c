@@ -24,7 +24,7 @@ int ImportImage(char *input_filename, int opt_bpp, int opt_vclr, int opt_sx,
                 int opt_adjust_height, int opt_limit, int opt_lower_limit,
                 int opt_upper_limit, int opt_x_cell_offset,
                 int opt_y_cell_offset, int opt_ignore_land_upper,
-                int opt_ignore_land_lower, char *opt_texture, int opt_scale)
+                int opt_ignore_land_lower, char *opt_texture, float opt_scale)
 {
     int i,
         x,
@@ -196,6 +196,7 @@ int ImportImage(char *input_filename, int opt_bpp, int opt_vclr, int opt_sx,
                     memcpy(&vtex_image[y][x], s_vtex + (2*x), 2);
                 }
             }
+
             for (x = 0; x < cellsize+2; x++) {
                 for (y = 0; y < cellsize+2; y++) {
 
@@ -224,6 +225,7 @@ int ImportImage(char *input_filename, int opt_bpp, int opt_vclr, int opt_sx,
                     }
                 }
             }
+
             if (opt_ignore_land_upper || opt_ignore_land_lower) {
                 flag_ignore_land = 1;
                 for (x = 0; x < cellsize+1; x++) {
@@ -462,78 +464,6 @@ int WriteTES3CELLRecord(int cx, int cy, FILE *fp_out)
     return 0;
 }
 
-// Not generally used, this version reads a file called cells.txt" contained cell co-ordinates in names,
-// useful if relocating a land or importing, say, a Fallout3/Oblivion/Skyrim landscape to Morrowind.
-
-int WriteTES3CELLRecordN(int cx, int cy, FILE *fp_out)
-{
-    int i;
-    char name[256];
-
-    char s[256];
-    char s_x[64], s_y[64], s_name[256];
-    int fx = -99999999, fy = -99999999; // No chance of an accidental match with these defaults. :)
-    int ox, oy;
-    int p;
-
-    FILE *fp;
-
-//	ox = (int) ((float) cx / 2)-1;
-//	oy = (int) ((float) cy / 2)+4;
-    ox = (int) cx;
-    oy = (int) cy;
-
-    if ((fp = fopen("cells.txt", "r")) != 0) {
-        while (fgets(s, 256, fp) != 0) {
-            p = 0;
-
-            for (i = 0; s[i+p] != ':' && s[i+p] != '\0'; s_x[i] = s[i+p], i++);
-            s_x[i] = '\0';
-
-            fx = atoi(s_x);
-
-            p += i+1;
-            for (i = 0; s[i+p] != ':' && s[i+p] != '\0'; s_y[i] = s[i+p], i++);
-            s_y[i] = '\0';
-
-            fy = atoi(s_y);
-
-            p += i+1;
-            for (i = 0; s[i+p] != ':' && s[i+p] != '\0' && s[i+p] != '\n' && s[i+p] != '\r'; s_name[i] = s[i+p], i++);
-            s_name[i] = '\0';
-
-            //printf("Got %d (%s),%d (%s),%s<<\n", fx, s_x, fy, s_y, s_name);
-
-            if (fx == ox && fy == oy) break;
-        }
-        fclose(fp);
-    } else {
-        fprintf(stderr, "Cannot open list of cell names %s: %s\n", "cells.txt", strerror(errno));
-    }
-
-    if (fx == ox && fy == oy) {
-        strcpy(name, s_name);
-        printf("Matched name: %s\n", name);
-    } else {
-        name[0] = '\0';
-    }
-
-    fprintf(fp_out, "CELL%c%c%c%c", 29+ (int) strlen(name), 0, 0, 0);
-    for (i = 0; i < 8; i++) {
-        fputc(0, fp_out);
-    }
-    fprintf(fp_out, "NAME%c%c%c%c%s%c", (int) strlen(name)+1, 0, 0, 0, name, 0);
-    fprintf(fp_out, "DATA%c%c%c%c", 12, 0, 0, 0);
-
-    for (i = 0; i < 4; i++) {
-        fputc(0, fp_out);
-    }
-    fwrite(&cx, 4, 1, fp_out);
-    fwrite(&cy, 4, 1, fp_out);
-
-    return 0;
-}
-
 
 int WriteTES3Header(FILE *fp_out)
 {
@@ -575,7 +505,7 @@ int WriteTES3Header(FILE *fp_out)
 
 }
 
-int StandardizeRAW(char *input_filename, char *output_filename, int *sx, int *sy, int Bp, int std, int opt_adjust_height, int opt_scale)
+int StandardizeRAW(char *input_filename, char *output_filename, int *sx, int *sy, int Bp, int std, int opt_adjust_height, float opt_scale)
 {
     int i, j;
     int sxx = 0, syx = 0;
@@ -658,7 +588,7 @@ int StandardizeRAW(char *input_filename, char *output_filename, int *sx, int *sy
 
 // Turn a BMP file in to a 32-bit RAW file of the same dimensions.
 
-int StandardizeBMP2RAW(char *input_filename, char *output_filename, int *sx, int *sy, int *Bp, int std, int opt_adjust_height, int opt_scale)
+int StandardizeBMP2RAW(char *input_filename, char *output_filename, int *sx, int *sy, int *Bp, int std, int opt_adjust_height, float opt_scale)
 {
     int i, j;
 
