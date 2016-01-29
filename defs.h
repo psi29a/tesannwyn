@@ -59,8 +59,8 @@ struct {
     int count;
     int replace_count;
     short unsigned int myindex;
-    short unsigned int old[1024];
-    short unsigned int new[1024];
+    short unsigned int old_values[1024];
+    short unsigned int new_values[1024];
 } vtex3_replace;
 
 

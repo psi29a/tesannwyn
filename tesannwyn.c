@@ -1,14 +1,13 @@
-/*******************************************************************************************
- ** TESAnnwyn: A TES3/TES4 height map importer/exporter (to & from RAW or BMP).
- **
- ** Paul Halliday: 31-Dec-2006
- **
- ** This is entirely my own work. No borrowed code. All reverse engineering has been
- ** researched by myself.
- **
- ** License: GNU (Copy, modify, distribute as you like.
- ** Please just credit me if you borrow code. ;)
- ***************************************************************************************/
+/* TESAnnwyn: A TES3/TES4 height map importer/exporter (to & from RAW or BMP).
+ *
+ * Paul Halliday: 31-Dec-2006
+ *
+ * This is entirely my own work. No borrowed code.
+ * All reverse engineering has been researched by myself.
+ *
+ * License: GNU (Copy, modify, distribute as you like.
+ * Please just credit me if you borrow code. ;)
+ */
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -61,10 +60,6 @@ int main(int argc, char *argv[])
 
     float opt_scale = 1.0,
           opt_v_overlap = 0.25;
-
-    int cleanup_list_x[1048576];
-    int cleanup_list_y[1048576];
-    int cleanup_list_count = 0;
 
     char c,
          s[256],

@@ -1,13 +1,12 @@
-/*******************************************************************************************
- ** TES3Annwyn: A TES3/TES4 height map importer/exporter (to & from RAW or BMP).
- **
- ** Paul Halliday: 31-Dec-2006
- **
- ** This is entirely my own work. No borrowed code. All reverse engineering has been
- ** researched by myself.
- **
- ** License: GNU (Copy, modify, distribute as you please. ;)
- ***************************************************************************************/
+/* TES3Annwyn: A TES3/TES4 height map importer/exporter (to & from RAW or BMP).
+ *
+ * Paul Halliday: 31-Dec-2006
+ *
+ * This is entirely my own work. No borrowed code. All reverse engineering has been
+ * researched by myself.
+ *
+ * License: GNU (Copy, modify, distribute as you please. ;)
+ */
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -190,10 +189,12 @@ int ImportImage(char *input_filename, int opt_bpp, int opt_vclr, int opt_sx,
                 }
             }
 
-            for (y = 0; y < tex_size; y++) {
-                ReadVTEX3(s_vtex, tex_size, cx, cy, y, opt_sx, opt_sy, fp_vtex[0]);
-                for (x = 0; x < tex_size; x++) {
-                    memcpy(&vtex_image[y][x], s_vtex + (2*x), 2);
+            if (opt_vtex){
+                for (y = 0; y < tex_size; y++) {
+                    ReadVTEX3(s_vtex, tex_size, cx, cy, y, opt_sx, opt_sy, fp_vtex[0]);
+                    for (x = 0; x < tex_size; x++) {
+                        memcpy(&vtex_image[y][x], s_vtex + (2*x), 2);
+                    }
                 }
             }
 

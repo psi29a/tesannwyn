@@ -1,13 +1,13 @@
-/*******************************************************************************************
- ** TESAnnwyn: A TES3/TES4 height map importer/exporter (to & from RAW or BMP).
- **
- ** Paul Halliday: 31-Dec-2006
- **
- ** This is entirely my own work. No borrowed code. All reverse engineering has been
- ** researched by myself.
- **
- ** License: GNU (Copy, modify, distribute as you please. ;)
- ***************************************************************************************/
+/*
+ * TESAnnwyn: A TES3 height map importer/exporter (to & from RAW or BMP).
+ *
+ * Paul Halliday: 31-Dec-2006
+ *
+ * This is entirely my own work. No borrowed code. All reverse engineering has been
+ * researched by myself.
+ *
+ * License: GNU (Copy, modify, distribute as you please. ;)
+ */
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -143,8 +143,7 @@ int WriteBMPGreyScaleHeader(FILE *fp_out, int sx, int sy, int bpp)
             0xF4, 0x00, 0xF5, 0xF5, 0xF5, 0x00, 0xF6, 0xF6, 0xF6, 0x00, 0xF7, 0xF7,
             0xF7, 0x00, 0xF8, 0xF8, 0xF8, 0x00, 0xF9, 0xF9, 0xF9, 0x00, 0xFA, 0xFA,
             0xFA, 0x00, 0xFB, 0xFB, 0xFB, 0x00, 0xFC, 0xFC, 0xFC, 0x00, 0xFD, 0xFD,
-            0xFD, 0x00, 0xFE, 0xFE, 0xFE, 0x00, 0xFF, 0xFF, 0xFF, 0x00
-    };
+            0xFD, 0x00, 0xFE, 0xFE, 0xFE, 0x00, 0xFF, 0xFF, 0xFF, 0x00};
 
     i = (sx*sy*4)+1078;
 
@@ -202,10 +201,9 @@ int FixTES3HeaderSize(char *filename, int num_records)
 
 int bytes_to_int(char b1, char b2, char b3, char b4)
 {
-        return (unsigned int) ((unsigned char) b1
-                + (256 * (unsigned char) b2)
-                + (65536 * (unsigned char) b3)
-                + (16777216 * (unsigned char) b4));
-
+    return (unsigned int) ((unsigned char) b1
+            + (256 * (unsigned char) b2)
+            + (65536 * (unsigned char) b3)
+            + (16777216 * (unsigned char) b4));
 }
 

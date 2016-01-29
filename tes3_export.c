@@ -1,13 +1,12 @@
-/*******************************************************************************************
- ** TESAnnwyn: A TES3/TES4 height map importer/exporter (to & from RAW or BMP).
- **
- ** Paul Halliday: 31-Dec-2006
- **
- ** This is entirely my own work. No borrowed code. All reverse engineering has been
- ** researched by myself.
- **
- ** License: GNU (Copy, modify, distribute as you please. ;)
- ***************************************************************************************/
+/* TESAnnwyn: A TES3/TES4 height map importer/exporter (to & from RAW or BMP).
+ *
+ * Paul Halliday: 31-Dec-2006
+ *
+ * This is entirely my own work. No borrowed code.
+ * All reverse engineering has been researched by myself.
+ *
+ * License: GNU (Copy, modify, distribute as you please. ;)
+ */
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -26,20 +25,8 @@
 // It reads the VHGT data from files called "landx.y.tmp" where x and y are the range
 // of co-ordinates matched from the ESP in the preceding function.
 
-/* TODO: try to remove globals */
-int cleanup_list_x[1048576];
-int cleanup_list_y[1048576];
-int cleanup_list_count = 0;
-int height_stat_min = 1048576,
-    height_stat_max = -1048576, // Record the minimum and maximum heights
-    height_stat_max_cell_x,
-    height_stat_max_cell_y,
-    height_stat_min_cell_x,
-    height_stat_min_cell_y;
 
-
-
-int HumptyImage(char *output_filename, int opt_image_type, int bpp, int opt_rescale, int opt_adjust_height, int opt_grid, int opt_scale)
+int HumptyImage(char *output_filename, int opt_image_type, int bpp, int opt_rescale, int opt_adjust_height, int opt_grid, float opt_scale)
 {
     int i, j = 0;
     int c;
@@ -205,7 +192,7 @@ int HumptyImage(char *output_filename, int opt_image_type, int bpp, int opt_resc
     return 0;
 }
 
-int RescaleGreyScale(char *output_filename, int opt_image_type, int bpp, int opt_adjust_height, int opt_scale)
+int RescaleGreyScale(char *output_filename, int opt_image_type, int bpp, int opt_adjust_height, float opt_scale)
 {
     int i, j;
     int c;
@@ -261,12 +248,12 @@ int RescaleGreyScale(char *output_filename, int opt_image_type, int bpp, int opt
                                 memcpy(tmp_int, &row_sum, 4);
                                 height = ((float) (row_sum + (opt_adjust_height/8))) * opt_scale;
                                 if (h_high < height) {
-                                    h_high = height; 
+                                    h_high = height;
                                     height_stat_max_cell_x = x;
                                     height_stat_max_cell_y = y;
                                 }
                                 if (h_low  > height) {
-                                    h_low = height; 
+                                    h_low = height;
                                     height_stat_min_cell_x = x;
                                     height_stat_min_cell_y = y;
                                 }
@@ -774,8 +761,8 @@ int ReplaceVTEX3Textures(char *vtex)
     for (i = 0; i < 256; i++) {
         tex = (short unsigned int) *(vtex+(2*i));
         for (j = 0; j < vtex3_replace.replace_count; j++) {
-            if (vtex3_replace.old[j] == tex) {
-                *(vtex+(2*i)) = vtex3_replace.new[j];
+            if (vtex3_replace.old_values[j] == tex) {
+                *(vtex+(2*i)) = vtex3_replace.new_values[j];
             }
         }
 
