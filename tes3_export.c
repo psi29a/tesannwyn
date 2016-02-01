@@ -1,6 +1,7 @@
 /* TESAnnwyn: A TES3/TES4 height map importer/exporter (to & from RAW or BMP).
  *
  * Paul Halliday: 31-Dec-2006
+ * Bret Curtis: 2015
  *
  * This is entirely my own work. No borrowed code.
  * All reverse engineering has been researched by myself.
@@ -19,11 +20,6 @@
 
 #include "defs.h"
 #include "tes3_export.h"
-
-// Creates a RAW or BMP (opt_image_type) image called output_filename.
-// It reads the VHGT data from files called "landx.y.tmp" where x and y are the range
-// of co-ordinates matched from the ESP in the preceding function.
-
 
 /****************************************************
 ** bytes_to_int():
@@ -72,8 +68,6 @@ int WriteBMPHeader(FILE *fp_out, int sx, int sy, int bpp)
 
 int WriteBMPGreyScaleHeader(FILE *fp_out, int sx, int sy, int bpp)
 {
-    int i;
-
     char bmp_head[1080] = {
             0x42, 0x4D, 0x38, 0xC4, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x36, 0x04,
             0x00, 0x00, 0x28, 0x00, 0x00, 0x00, 0xC0, 0x00, 0x00, 0x00, 0x00, 0x01,
@@ -166,8 +160,7 @@ int WriteBMPGreyScaleHeader(FILE *fp_out, int sx, int sy, int bpp)
             0xFA, 0x00, 0xFB, 0xFB, 0xFB, 0x00, 0xFC, 0xFC, 0xFC, 0x00, 0xFD, 0xFD,
             0xFD, 0x00, 0xFE, 0xFE, 0xFE, 0x00, 0xFF, 0xFF, 0xFF, 0x00};
 
-    i = (sx*sy*4)+1078;
-
+    int i = (sx*sy*4)+1078;
     memcpy(bmp_head+2, &i, 4);
     memcpy(bmp_head+18, &sx, 4);
     memcpy(bmp_head+22, &sy, 4);
@@ -182,7 +175,10 @@ int WriteBMPGreyScaleHeader(FILE *fp_out, int sx, int sy, int bpp)
     return 0;
 }
 
-int HumptyImage(char *output_filename, int opt_image_type, int bpp, int opt_rescale, int opt_adjust_height, int opt_grid, float opt_scale)
+// Creates a RAW or BMP (opt_image_type) image called output_filename.
+// It reads the VHGT data from files called "landx.y.tmp" where x and y are the range
+// of co-ordinates matched from the ESP in the preceding function.
+int HumptyImage(char *output_filename, int opt_image_type, int bpp, int opt_adjust_height, int opt_grid, int opt_rescale, float opt_scale)
 {
     int i, j = 0;
     int c;
@@ -260,21 +256,6 @@ int HumptyImage(char *output_filename, int opt_image_type, int bpp, int opt_resc
                             height = opt_grid;
                         }
                     }
-
-                    // For KuKulzA VVD x2:
-
-                    /*
-                    //height = 0xFFFF;
-
-                    if (opt_grid != -1) {
-                        if (
-                            ((x -( 10 * (int) (x / 10)) == 0) && (i == 1 || i == 2)) ||
-                            ((y -( 10 * (int) (y / 10)) == 0) && (c == 1 || c == 2))) {
-
-                            height = opt_grid;
-                        }
-                    }
-                    */
 
                     if (bpp == 32) {
                         h32int = (int) height;
@@ -627,12 +608,9 @@ int CleanUp(int cleanup_list_x[], int cleanup_list_y[])
     return 0;
 }
 
-int ExportImages(int opt_image_type, int opt_bpp, int opt_vclr, int opt_grid, int opt_vtex, int opt_adjust_height, int opt_rescale)
+int ExportImages(int opt_image_type, int opt_bpp, int opt_vclr, int opt_grid, int opt_vtex, int opt_adjust_height, int opt_rescale, float opt_scale)
 {
-    printf("%d, %d, %d, %d, %d, %d, %d\n", opt_image_type, opt_bpp, opt_vclr, opt_grid, opt_vtex, opt_adjust_height, opt_rescale);
-
     int i;
-
     ltex.count = 0;
 
     mkdir(TA_TMP_DIR, 0777);
@@ -645,7 +623,6 @@ int ExportImages(int opt_image_type, int opt_bpp, int opt_vclr, int opt_grid, in
 
     for (i = 0; i < input_files.count; i++) {
         printf("\nRunning TES3 exporter:\n");
-        printf("%s, %d, %d, %d\n", input_files.filename[i], opt_bpp, opt_vclr, opt_vtex);
         ExportTES3Land(input_files.filename[i], opt_bpp, opt_vclr, opt_vtex);
     }
 
@@ -661,13 +638,13 @@ int ExportImages(int opt_image_type, int opt_bpp, int opt_vclr, int opt_grid, in
 
     if (opt_image_type == RAW) {
         printf("\n\nGenerating new RAW output file: %s ...\n", TA_RAW_OUT);
-        HumptyImage(TA_RAW_OUT, opt_image_type, opt_bpp, opt_rescale, opt_adjust_height, opt_grid, opt_rescale);
+        HumptyImage(TA_RAW_OUT, opt_image_type, opt_bpp, opt_adjust_height, opt_grid, opt_rescale, opt_scale);
     } else if (opt_image_type == BMP) {
         printf("\n\nGenerating new BMP output file: %s ...\n", TA_BMP_OUT);
         if (opt_rescale) {
-            RescaleGreyScale(TA_BMP_OUT, opt_image_type, opt_bpp, opt_adjust_height, opt_rescale);
+            RescaleGreyScale(TA_BMP_OUT, opt_image_type, opt_bpp, opt_adjust_height, opt_scale);
         }
-        HumptyImage(TA_BMP_OUT, opt_image_type, opt_bpp, opt_rescale, opt_adjust_height, opt_grid, opt_rescale);
+        HumptyImage(TA_BMP_OUT, opt_image_type, opt_bpp, opt_adjust_height, opt_grid, opt_rescale, opt_scale);
     }
 
     CleanUp(cleanup_list_x, cleanup_list_y);
@@ -689,7 +666,6 @@ int ExportImages(int opt_image_type, int opt_bpp, int opt_vclr, int opt_grid, in
 
 int ExportTES3Land(char *input_esp_filename, int opt_bpp, int opt_vclr, int opt_vtex)
 {
-    //printf("%s, %d, %d, %d\n", input_files.filename[i], opt_bpp, opt_vclr, opt_vtex);
     int size;	/* Size of current record.             */
 
     char s[40];	/* For storing the 16-byte header. */
@@ -717,9 +693,7 @@ int ExportTES3Land(char *input_esp_filename, int opt_bpp, int opt_vclr, int opt_
     /* TES3 records follows the format of TYPE (4 bytes) then
      * the record length (4 bytes) - which we put in to the variable, size.
      */
-
     while (fread(s, 1, 16, fpin) > 0) {
-
         cell.current_x = 0;
         cell.current_y = 0;
 
@@ -756,12 +730,11 @@ int ExportTES3Land(char *input_esp_filename, int opt_bpp, int opt_vclr, int opt_
          ** a procedure that will handle the format, including
          ** determining if any modifications should be made.
          *****************************************************/
-
         if (strncmp(s, "LAND", 4) == 0) {
-            putchar(s[0]);
+            //putchar(s[0]); // TODO: verbose output
             Process3LANDData(or + 16, size-16, opt_vclr, opt_vtex);
         }  else if (strncmp(s, "LTEX", 4) == 0) {
-            putchar(s[0]);
+            //putchar(s[0]); // TODO: verbose output
             Process3LTEXData(or + 16, size-16);
         }
 
@@ -816,8 +789,6 @@ int Process3LANDData(char *r, int size, int opt_vclr, int opt_vtex)
         return 1;
     }
 
-    printf("cell.current: (%d, %d)\n", cell.current_x, cell.current_y);
-
     if (strncmp("DATA", r + pos, 4) == 0) {
         nsize = bytes_to_int(r[pos+4], r[pos+5], r[pos+6], r[pos+7]);
         pos += 8 + nsize;
@@ -844,8 +815,7 @@ int Process3LANDData(char *r, int size, int opt_vclr, int opt_vtex)
                 exit(1);
         }
 
-        // Write out the VHGT data (4232 bytes)
-
+    // Write out the VHGT data (4232 bytes)
     fwrite(r+vhgt_pos+8, 4232, 1, fp_land);
 
     fclose(fp_land);
@@ -1021,38 +991,38 @@ int WriteLTEXdata(char *filename)
 int Process3LTEXData(char *r, int size)
 {
     short unsigned int i;
-        int pos = 0;
-        int nsize;
+    int pos = 0;
+    int nsize;
 
-        int index = 0;
+    int index = 0;
 
-        char lname[128],
-             tname[128];
+    char lname[128],
+         tname[128];
 
-        /*********************************************************
-         * Get the (hopefully) SCTX header.
-         ********************************************************/
+    /*********************************************************
+     * Get the (hopefully) SCTX header.
+     ********************************************************/
 
-        if (strncmp("NAME", r + pos, 4) == 0) {
-                nsize = (int) r[pos+4];
-                strncpy(lname, r+pos+8, nsize);
-                pos += 8 +nsize;
-        }
+    if (strncmp("NAME", r + pos, 4) == 0) {
+            nsize = (int) r[pos+4];
+            strncpy(lname, r+pos+8, nsize);
+            pos += 8 +nsize;
+    }
 
-        if (strncmp("INTV", r + pos, 4) == 0) {
-                nsize = (int) r[pos+4];
-        memcpy(&index, r+pos+8, 4);
-                pos += 8 +nsize;
-        }
+    if (strncmp("INTV", r + pos, 4) == 0) {
+            nsize = (int) r[pos+4];
+    memcpy(&index, r+pos+8, 4);
+            pos += 8 +nsize;
+    }
 
-        if (strncmp("DATA", r + pos, 4) == 0) {
-                nsize = (int) r[pos+4];
-                strncpy(tname, r+pos+8, nsize);
-                pos += 8 +nsize;
-        } else {
-                printf("Couldn't find LTEX DATA subrec!\n");
-                exit(1);
-        }
+    if (strncmp("DATA", r + pos, 4) == 0) {
+            nsize = (int) r[pos+4];
+            strncpy(tname, r+pos+8, nsize);
+            pos += 8 +nsize;
+    } else {
+            printf("Couldn't find LTEX DATA subrec!\n");
+            exit(1);
+    }
 
     for (i = 0; i < ltex.count; i++) {
         if (strcmp(ltex.texname[i], lname) == 0) {

@@ -1,6 +1,7 @@
 /* TESAnnwyn: A TES3/TES4 height map importer/exporter (to & from RAW or BMP).
  *
  * Paul Halliday: 31-Dec-2006
+ * Bret Curtis: 2015
  *
  * This is entirely my own work. No borrowed code.
  * All reverse engineering has been researched by myself.
@@ -331,7 +332,7 @@ int main(int argc, char *argv[])
                 opt_texture, opt_scale);
     } else {
         ExportImages(opt_image_type, opt_bpp, opt_vclr, opt_grid, opt_vtex,
-                     opt_adjust_height, opt_rescale);
+                     opt_adjust_height, opt_rescale, opt_scale);
     }
 
     return 0;
