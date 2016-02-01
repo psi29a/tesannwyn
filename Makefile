@@ -1,7 +1,7 @@
 tesannwyn:
-	cc -g -O2 -Wall -c tes3_import.c
-	cc -g -O2 -Wall -c tes3_export.c
-	cc -g -O2 -Wall -o tesannwyn tesannwyn.c tes3_import.o tes3_export.o -lm
+	cc -std=c99 -g -O2 -Wall -c tes3_import.c
+	cc -std=c99 -g -O2 -Wall -c tes3_export.c
+	cc -std=c99 -g -O2 -Wall -o tesannwyn tesannwyn.c tes3_import.o tes3_export.o -lm
 install: tesannwyn
 	install tesannwyn $(DESTDIR)/usr/bin/
 uninstall:
