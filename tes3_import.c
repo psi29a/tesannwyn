@@ -17,6 +17,7 @@
 
 #include "defs.h"
 #include "tes3_import.h"
+#include "tes3_export.h"
 
 int ImportImage(char *input_filename, int opt_bpp, int opt_vclr, int opt_sx,
                 int opt_sy, int opt_image_type, int opt_vtex, int opt_rescale,
@@ -76,9 +77,6 @@ int ImportImage(char *input_filename, int opt_bpp, int opt_vclr, int opt_sx,
         height_stat_min_cell_y;
 
     int cellsize = 0;
-
-    int total_overflows = 0,
-        total_underflows = 0;
 
     int total_records = 0;
 
@@ -281,17 +279,17 @@ int ImportImage(char *input_filename, int opt_bpp, int opt_vclr, int opt_sx,
     return 0;
 }
 
-int CatchGradientOverflows(int *gradient, int *total_overflows, int *total_underflows)
+int CatchGradientOverflows(int *gradient)
 {
     if (*gradient > 127) {
         //printf("Gradient corrected: %d\n", *gradient);
         *gradient = 127;
-        *total_overflows++;
+        total_overflows++;
         return 1;
     } else if (*gradient < -128) {
         //printf("Gradient corrected: %d\n", *gradient);
         *gradient = -128;
-        *total_underflows--;
+        total_underflows--;
         return 1;
     }
 
@@ -322,7 +320,7 @@ int WriteTES3LANDRecord(int cx, int cy, int opt_adjust_height, int image[66][66]
     for (y = 1; y < 65; y++) {
         for (x = 1; x < 65; x++) {
             igrad[y][x] = image[y][x] - image[y][x-1];
-            CatchGradientOverflows(&igrad[y][x], total_overflows, total_underflows);
+            CatchGradientOverflows(&igrad[y][x]);
         }
     }
 
@@ -334,7 +332,7 @@ int WriteTES3LANDRecord(int cx, int cy, int opt_adjust_height, int image[66][66]
     // Calculate Row 0.
     for (x = 1; x < 65 ; x++) {
         igrad[0][x] = image[0][x] - image[0][x-1];
-        CatchGradientOverflows(&igrad[0][x], total_overflows, total_underflows);
+        CatchGradientOverflows(&igrad[0][x]);
     }
 
     for (y = 0; y < 65; y++) {
@@ -399,7 +397,8 @@ int WriteTES3LANDRecord(int cx, int cy, int opt_adjust_height, int image[66][66]
 
     fprintf(fp_out, "VHGT%c%c%c%c", 136, 16, 0, 0);
 
-    printf("(%d,%d) ", cx, cy);
+    /* spams output, probably best for debug */
+    //printf("(%d,%d) ", cx, cy);
 
     height_offset = (float) image[0][0];
     fwrite(&height_offset, 4, 1, fp_out);
@@ -777,7 +776,7 @@ int ReadVTEX3(char *s_vtex, int tex_size, int cx, int cy, int y, int sx, int sy,
 
     fread(s, (int) x_size*Bp, 1, fp_vtex);
 
-    for (i = 0; i < tex_size; i++) {
+    for (int i = 0; i < tex_size; i++) {
         memcpy(s_vtex + (Bp*i), s + (i * Bp), 2);
     }
 

@@ -29,7 +29,6 @@
 
 #include "tes3_import.h"
 #include "tes3_export.h"
-#include "tes3_vtex.h"
 
 int ShowUsageExit(char *argv0);
 
@@ -69,6 +68,8 @@ int main(int argc, char *argv[])
          opt_dimensions_string[48],
          opt_limit_string[48],
          opt_texture[32];
+
+    opt_texture[0] = '\0';
 
     char *opt_tes_mode = TES_MORROWIND;
 

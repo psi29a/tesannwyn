@@ -19,14 +19,12 @@ set(CMAKE_REQUIRED_LIBRARIES m)
 include_directories("${tesannwyn_SOURCE_DIR}")
 
 set(SRCS
-            common.c
-            tes3_vtex.c
             tes3_import.c
             tes3_export.c
             tesannwyn.c
 )
 
-set(HDRS defs.h common.h tes3_import.h tes3_export.h tes3_vtex.h)
+set(HDRS defs.h tes3_import.h tes3_export.h)
 
 set(DATA_PATH "${tesannwyn_SOURCE_DIR}")
 add_executable(tesannwyn ${SRCS} ${HDRS})

@@ -8,6 +8,7 @@
  * License: GNU (Copy, modify, distribute as you please. ;)
  */
 
+#include <ctype.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <errno.h>
@@ -18,13 +19,168 @@
 
 #include "defs.h"
 #include "tes3_export.h"
-#include "tes3_vtex.h"
-#include "common.h"
 
 // Creates a RAW or BMP (opt_image_type) image called output_filename.
 // It reads the VHGT data from files called "landx.y.tmp" where x and y are the range
 // of co-ordinates matched from the ESP in the preceding function.
 
+
+/****************************************************
+** bytes_to_int():
+**
+** Convert 4-bytes in to an Integer (little endian).
+** Most commonly called for converting the size of a
+** record or field in to a usable integer.
+***************************************************/
+int bytes_to_int(char b1, char b2, char b3, char b4)
+{
+    return (unsigned int) ((unsigned char) b1
+            + (256 * (unsigned char) b2)
+            + (65536 * (unsigned char) b3)
+            + (16777216 * (unsigned char) b4));
+}
+
+int WriteBMPHeader(FILE *fp_out, int sx, int sy, int bpp)
+{
+    int i;
+
+    char bmp_head[54] = {
+            0x42, 0x4D, 0x98, 0xEA, 0x00, 0x00, 0x00, 0x00,
+            0x00, 0x00, 0x36, 0x00, 0x00, 0x00, 0x28, 0x00,
+            0x00, 0x00, 0xC8, 0x00, 0x00, 0x00, 0x64, 0x00,
+            0x00, 0x00, 0x01, 0x00, 0x20, 0x00, 0x00, 0x00,
+            0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x12, 0x0B,
+            0x00, 0x00, 0x12, 0x0B, 0x00, 0x00, 0x00, 0x00,
+            0x00, 0x00, 0x00, 0x00, 0x00, 0x00
+    };
+
+    i = (sx*sy*4)+54;
+
+    memcpy(bmp_head+2, &i, 4);
+    memcpy(bmp_head+18, &sx, 4);
+    memcpy(bmp_head+22, &sy, 4);
+    bmp_head[28] = bpp;
+    memcpy(bmp_head+28, &bpp, 1);  // Correct the header for bits per pixel.
+
+    i = (sx*sy*4);
+    memcpy(bmp_head+34, &i, 4);
+
+    fwrite(bmp_head, 54, 1, fp_out);
+
+    return 0;
+}
+
+int WriteBMPGreyScaleHeader(FILE *fp_out, int sx, int sy, int bpp)
+{
+    int i;
+
+    char bmp_head[1080] = {
+            0x42, 0x4D, 0x38, 0xC4, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x36, 0x04,
+            0x00, 0x00, 0x28, 0x00, 0x00, 0x00, 0xC0, 0x00, 0x00, 0x00, 0x00, 0x01,
+            0x00, 0x00, 0x01, 0x00, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+            0x00, 0x00, 0x75, 0x0A, 0x00, 0x00, 0x75, 0x0A, 0x00, 0x00, 0x00, 0x00,
+            0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01, 0x01,
+            0x01, 0x00, 0x02, 0x02, 0x02, 0x00, 0x03, 0x03, 0x03, 0x00, 0x04, 0x04,
+            0x04, 0x00, 0x05, 0x05, 0x05, 0x00, 0x06, 0x06, 0x06, 0x00, 0x07, 0x07,
+            0x07, 0x00, 0x08, 0x08, 0x08, 0x00, 0x09, 0x09, 0x09, 0x00, 0x0A, 0x0A,
+            0x0A, 0x00, 0x0B, 0x0B, 0x0B, 0x00, 0x0C, 0x0C, 0x0C, 0x00, 0x0D, 0x0D,
+            0x0D, 0x00, 0x0E, 0x0E, 0x0E, 0x00, 0x0F, 0x0F, 0x0F, 0x00, 0x10, 0x10,
+            0x10, 0x00, 0x11, 0x11, 0x11, 0x00, 0x12, 0x12, 0x12, 0x00, 0x13, 0x13,
+            0x13, 0x00, 0x14, 0x14, 0x14, 0x00, 0x15, 0x15, 0x15, 0x00, 0x16, 0x16,
+            0x16, 0x00, 0x17, 0x17, 0x17, 0x00, 0x18, 0x18, 0x18, 0x00, 0x19, 0x19,
+            0x19, 0x00, 0x1A, 0x1A, 0x1A, 0x00, 0x1B, 0x1B, 0x1B, 0x00, 0x1C, 0x1C,
+            0x1C, 0x00, 0x1D, 0x1D, 0x1D, 0x00, 0x1E, 0x1E, 0x1E, 0x00, 0x1F, 0x1F,
+            0x1F, 0x00, 0x20, 0x20, 0x20, 0x00, 0x21, 0x21, 0x21, 0x00, 0x22, 0x22,
+            0x22, 0x00, 0x23, 0x23, 0x23, 0x00, 0x24, 0x24, 0x24, 0x00, 0x25, 0x25,
+            0x25, 0x00, 0x26, 0x26, 0x26, 0x00, 0x27, 0x27, 0x27, 0x00, 0x28, 0x28,
+            0x28, 0x00, 0x29, 0x29, 0x29, 0x00, 0x2A, 0x2A, 0x2A, 0x00, 0x2B, 0x2B,
+            0x2B, 0x00, 0x2C, 0x2C, 0x2C, 0x00, 0x2D, 0x2D, 0x2D, 0x00, 0x2E, 0x2E,
+            0x2E, 0x00, 0x2F, 0x2F, 0x2F, 0x00, 0x30, 0x30, 0x30, 0x00, 0x31, 0x31,
+            0x31, 0x00, 0x32, 0x32, 0x32, 0x00, 0x33, 0x33, 0x33, 0x00, 0x34, 0x34,
+            0x34, 0x00, 0x35, 0x35, 0x35, 0x00, 0x36, 0x36, 0x36, 0x00, 0x37, 0x37,
+            0x37, 0x00, 0x38, 0x38, 0x38, 0x00, 0x39, 0x39, 0x39, 0x00, 0x3A, 0x3A,
+            0x3A, 0x00, 0x3B, 0x3B, 0x3B, 0x00, 0x3C, 0x3C, 0x3C, 0x00, 0x3D, 0x3D,
+            0x3D, 0x00, 0x3E, 0x3E, 0x3E, 0x00, 0x3F, 0x3F, 0x3F, 0x00, 0x40, 0x40,
+            0x40, 0x00, 0x41, 0x41, 0x41, 0x00, 0x42, 0x42, 0x42, 0x00, 0x43, 0x43,
+            0x43, 0x00, 0x44, 0x44, 0x44, 0x00, 0x45, 0x45, 0x45, 0x00, 0x46, 0x46,
+            0x46, 0x00, 0x47, 0x47, 0x47, 0x00, 0x48, 0x48, 0x48, 0x00, 0x49, 0x49,
+            0x49, 0x00, 0x4A, 0x4A, 0x4A, 0x00, 0x4B, 0x4B, 0x4B, 0x00, 0x4C, 0x4C,
+            0x4C, 0x00, 0x4D, 0x4D, 0x4D, 0x00, 0x4E, 0x4E, 0x4E, 0x00, 0x4F, 0x4F,
+            0x4F, 0x00, 0x50, 0x50, 0x50, 0x00, 0x51, 0x51, 0x51, 0x00, 0x52, 0x52,
+            0x52, 0x00, 0x53, 0x53, 0x53, 0x00, 0x54, 0x54, 0x54, 0x00, 0x55, 0x55,
+            0x55, 0x00, 0x56, 0x56, 0x56, 0x00, 0x57, 0x57, 0x57, 0x00, 0x58, 0x58,
+            0x58, 0x00, 0x59, 0x59, 0x59, 0x00, 0x5A, 0x5A, 0x5A, 0x00, 0x5B, 0x5B,
+            0x5B, 0x00, 0x5C, 0x5C, 0x5C, 0x00, 0x5D, 0x5D, 0x5D, 0x00, 0x5E, 0x5E,
+            0x5E, 0x00, 0x5F, 0x5F, 0x5F, 0x00, 0x60, 0x60, 0x60, 0x00, 0x61, 0x61,
+            0x61, 0x00, 0x62, 0x62, 0x62, 0x00, 0x63, 0x63, 0x63, 0x00, 0x64, 0x64,
+            0x64, 0x00, 0x65, 0x65, 0x65, 0x00, 0x66, 0x66, 0x66, 0x00, 0x67, 0x67,
+            0x67, 0x00, 0x68, 0x68, 0x68, 0x00, 0x69, 0x69, 0x69, 0x00, 0x6A, 0x6A,
+            0x6A, 0x00, 0x6B, 0x6B, 0x6B, 0x00, 0x6C, 0x6C, 0x6C, 0x00, 0x6D, 0x6D,
+            0x6D, 0x00, 0x6E, 0x6E, 0x6E, 0x00, 0x6F, 0x6F, 0x6F, 0x00, 0x70, 0x70,
+            0x70, 0x00, 0x71, 0x71, 0x71, 0x00, 0x72, 0x72, 0x72, 0x00, 0x73, 0x73,
+            0x73, 0x00, 0x74, 0x74, 0x74, 0x00, 0x75, 0x75, 0x75, 0x00, 0x76, 0x76,
+            0x76, 0x00, 0x77, 0x77, 0x77, 0x00, 0x78, 0x78, 0x78, 0x00, 0x79, 0x79,
+            0x79, 0x00, 0x7A, 0x7A, 0x7A, 0x00, 0x7B, 0x7B, 0x7B, 0x00, 0x7C, 0x7C,
+            0x7C, 0x00, 0x7D, 0x7D, 0x7D, 0x00, 0x7E, 0x7E, 0x7E, 0x00, 0x7F, 0x7F,
+            0x7F, 0x00, 0x80, 0x80, 0x80, 0x00, 0x81, 0x81, 0x81, 0x00, 0x82, 0x82,
+            0x82, 0x00, 0x83, 0x83, 0x83, 0x00, 0x84, 0x84, 0x84, 0x00, 0x85, 0x85,
+            0x85, 0x00, 0x86, 0x86, 0x86, 0x00, 0x87, 0x87, 0x87, 0x00, 0x88, 0x88,
+            0x88, 0x00, 0x89, 0x89, 0x89, 0x00, 0x8A, 0x8A, 0x8A, 0x00, 0x8B, 0x8B,
+            0x8B, 0x00, 0x8C, 0x8C, 0x8C, 0x00, 0x8D, 0x8D, 0x8D, 0x00, 0x8E, 0x8E,
+            0x8E, 0x00, 0x8F, 0x8F, 0x8F, 0x00, 0x90, 0x90, 0x90, 0x00, 0x91, 0x91,
+            0x91, 0x00, 0x92, 0x92, 0x92, 0x00, 0x93, 0x93, 0x93, 0x00, 0x94, 0x94,
+            0x94, 0x00, 0x95, 0x95, 0x95, 0x00, 0x96, 0x96, 0x96, 0x00, 0x97, 0x97,
+            0x97, 0x00, 0x98, 0x98, 0x98, 0x00, 0x99, 0x99, 0x99, 0x00, 0x9A, 0x9A,
+            0x9A, 0x00, 0x9B, 0x9B, 0x9B, 0x00, 0x9C, 0x9C, 0x9C, 0x00, 0x9D, 0x9D,
+            0x9D, 0x00, 0x9E, 0x9E, 0x9E, 0x00, 0x9F, 0x9F, 0x9F, 0x00, 0xA0, 0xA0,
+            0xA0, 0x00, 0xA1, 0xA1, 0xA1, 0x00, 0xA2, 0xA2, 0xA2, 0x00, 0xA3, 0xA3,
+            0xA3, 0x00, 0xA4, 0xA4, 0xA4, 0x00, 0xA5, 0xA5, 0xA5, 0x00, 0xA6, 0xA6,
+            0xA6, 0x00, 0xA7, 0xA7, 0xA7, 0x00, 0xA8, 0xA8, 0xA8, 0x00, 0xA9, 0xA9,
+            0xA9, 0x00, 0xAA, 0xAA, 0xAA, 0x00, 0xAB, 0xAB, 0xAB, 0x00, 0xAC, 0xAC,
+            0xAC, 0x00, 0xAD, 0xAD, 0xAD, 0x00, 0xAE, 0xAE, 0xAE, 0x00, 0xAF, 0xAF,
+            0xAF, 0x00, 0xB0, 0xB0, 0xB0, 0x00, 0xB1, 0xB1, 0xB1, 0x00, 0xB2, 0xB2,
+            0xB2, 0x00, 0xB3, 0xB3, 0xB3, 0x00, 0xB4, 0xB4, 0xB4, 0x00, 0xB5, 0xB5,
+            0xB5, 0x00, 0xB6, 0xB6, 0xB6, 0x00, 0xB7, 0xB7, 0xB7, 0x00, 0xB8, 0xB8,
+            0xB8, 0x00, 0xB9, 0xB9, 0xB9, 0x00, 0xBA, 0xBA, 0xBA, 0x00, 0xBB, 0xBB,
+            0xBB, 0x00, 0xBC, 0xBC, 0xBC, 0x00, 0xBD, 0xBD, 0xBD, 0x00, 0xBE, 0xBE,
+            0xBE, 0x00, 0xBF, 0xBF, 0xBF, 0x00, 0xC0, 0xC0, 0xC0, 0x00, 0xC1, 0xC1,
+            0xC1, 0x00, 0xC2, 0xC2, 0xC2, 0x00, 0xC3, 0xC3, 0xC3, 0x00, 0xC4, 0xC4,
+            0xC4, 0x00, 0xC5, 0xC5, 0xC5, 0x00, 0xC6, 0xC6, 0xC6, 0x00, 0xC7, 0xC7,
+            0xC7, 0x00, 0xC8, 0xC8, 0xC8, 0x00, 0xC9, 0xC9, 0xC9, 0x00, 0xCA, 0xCA,
+            0xCA, 0x00, 0xCB, 0xCB, 0xCB, 0x00, 0xCC, 0xCC, 0xCC, 0x00, 0xCD, 0xCD,
+            0xCD, 0x00, 0xCE, 0xCE, 0xCE, 0x00, 0xCF, 0xCF, 0xCF, 0x00, 0xD0, 0xD0,
+            0xD0, 0x00, 0xD1, 0xD1, 0xD1, 0x00, 0xD2, 0xD2, 0xD2, 0x00, 0xD3, 0xD3,
+            0xD3, 0x00, 0xD4, 0xD4, 0xD4, 0x00, 0xD5, 0xD5, 0xD5, 0x00, 0xD6, 0xD6,
+            0xD6, 0x00, 0xD7, 0xD7, 0xD7, 0x00, 0xD8, 0xD8, 0xD8, 0x00, 0xD9, 0xD9,
+            0xD9, 0x00, 0xDA, 0xDA, 0xDA, 0x00, 0xDB, 0xDB, 0xDB, 0x00, 0xDC, 0xDC,
+            0xDC, 0x00, 0xDD, 0xDD, 0xDD, 0x00, 0xDE, 0xDE, 0xDE, 0x00, 0xDF, 0xDF,
+            0xDF, 0x00, 0xE0, 0xE0, 0xE0, 0x00, 0xE1, 0xE1, 0xE1, 0x00, 0xE2, 0xE2,
+            0xE2, 0x00, 0xE3, 0xE3, 0xE3, 0x00, 0xE4, 0xE4, 0xE4, 0x00, 0xE5, 0xE5,
+            0xE5, 0x00, 0xE6, 0xE6, 0xE6, 0x00, 0xE7, 0xE7, 0xE7, 0x00, 0xE8, 0xE8,
+            0xE8, 0x00, 0xE9, 0xE9, 0xE9, 0x00, 0xEA, 0xEA, 0xEA, 0x00, 0xEB, 0xEB,
+            0xEB, 0x00, 0xEC, 0xEC, 0xEC, 0x00, 0xED, 0xED, 0xED, 0x00, 0xEE, 0xEE,
+            0xEE, 0x00, 0xEF, 0xEF, 0xEF, 0x00, 0xF0, 0xF0, 0xF0, 0x00, 0xF1, 0xF1,
+            0xF1, 0x00, 0xF2, 0xF2, 0xF2, 0x00, 0xF3, 0xF3, 0xF3, 0x00, 0xF4, 0xF4,
+            0xF4, 0x00, 0xF5, 0xF5, 0xF5, 0x00, 0xF6, 0xF6, 0xF6, 0x00, 0xF7, 0xF7,
+            0xF7, 0x00, 0xF8, 0xF8, 0xF8, 0x00, 0xF9, 0xF9, 0xF9, 0x00, 0xFA, 0xFA,
+            0xFA, 0x00, 0xFB, 0xFB, 0xFB, 0x00, 0xFC, 0xFC, 0xFC, 0x00, 0xFD, 0xFD,
+            0xFD, 0x00, 0xFE, 0xFE, 0xFE, 0x00, 0xFF, 0xFF, 0xFF, 0x00};
+
+    i = (sx*sy*4)+1078;
+
+    memcpy(bmp_head+2, &i, 4);
+    memcpy(bmp_head+18, &sx, 4);
+    memcpy(bmp_head+22, &sy, 4);
+    bmp_head[28] = bpp;
+    memcpy(bmp_head+28, &bpp, 1);  // Correct the header for bits per pixel.
+
+    i = (sx*sy*4);
+    memcpy(bmp_head+34, &i, 4);
+
+    fwrite(bmp_head, 1078, 1, fp_out);
+
+    return 0;
+}
 
 int HumptyImage(char *output_filename, int opt_image_type, int bpp, int opt_rescale, int opt_adjust_height, int opt_grid, float opt_scale)
 {
@@ -215,11 +371,7 @@ int RescaleGreyScale(char *output_filename, int opt_image_type, int bpp, int opt
     // Recalculate min and max x and y values.
 
     int h_low =  65536,
-        h_high = -65536,
-        height_stat_max_cell_x,
-        height_stat_max_cell_y,
-        height_stat_min_cell_x,
-        height_stat_min_cell_y;
+        h_high = -65536;
 
     ppc = MW_CELLSIZE;
 
@@ -457,8 +609,7 @@ int HumptyVTEX3(char *output_filename, int layer)
 
 int CleanUp(int cleanup_list_x[], int cleanup_list_y[])
 {
-    int i,
-        cleanup_list_count = 0;
+    int i;
 
     char filename[128];
 
@@ -478,17 +629,15 @@ int CleanUp(int cleanup_list_x[], int cleanup_list_y[])
 
 int ExportImages(int opt_image_type, int opt_bpp, int opt_vclr, int opt_grid, int opt_vtex, int opt_adjust_height, int opt_rescale)
 {
-    int i,
-        cleanup_list_count = 0;
-    char dir_name[128];
-    char vtex_layer_filename[128];
+    printf("%d, %d, %d, %d, %d, %d, %d\n", opt_image_type, opt_bpp, opt_vclr, opt_grid, opt_vtex, opt_adjust_height, opt_rescale);
+
+    int i;
 
     ltex.count = 0;
 
-        mkdir(TA_TMP_DIR, 0777);
+    mkdir(TA_TMP_DIR, 0777);
 
     // A sanity check.
-
     if (opt_image_type != RAW && opt_image_type != BMP) {
         opt_image_type = BMP;
         printf("You didn't specify an image type (-p 1 or 2). I'll choose BMP for you ...\n");
@@ -496,6 +645,7 @@ int ExportImages(int opt_image_type, int opt_bpp, int opt_vclr, int opt_grid, in
 
     for (i = 0; i < input_files.count; i++) {
         printf("\nRunning TES3 exporter:\n");
+        printf("%s, %d, %d, %d\n", input_files.filename[i], opt_bpp, opt_vclr, opt_vtex);
         ExportTES3Land(input_files.filename[i], opt_bpp, opt_vclr, opt_vtex);
     }
 
@@ -522,10 +672,10 @@ int ExportImages(int opt_image_type, int opt_bpp, int opt_vclr, int opt_grid, in
 
     CleanUp(cleanup_list_x, cleanup_list_y);
 
-        printf("\n\nHighest point was %d THU (%d Game Units) = %f metres    [Cell (%d,%d)]\n",
-                height_stat_max, height_stat_max * 8, ((float) height_stat_max * 0.114), height_stat_max_cell_x, height_stat_max_cell_y);
-        printf("Lowest  point was %d THU (%d Game Units) = %f metres    [Cell (%d,%d)]\n",
-                height_stat_min, height_stat_min * 8, ((float) height_stat_min * 0.114), height_stat_min_cell_x, height_stat_min_cell_y);
+    printf("\n\nHighest point was %d THU (%d Game Units) = %f metres    [Cell (%d,%d)]\n",
+            height_stat_max, height_stat_max * 8, ((float) height_stat_max * 0.114), height_stat_max_cell_x, height_stat_max_cell_y);
+    printf("Lowest  point was %d THU (%d Game Units) = %f metres    [Cell (%d,%d)]\n",
+            height_stat_min, height_stat_min * 8, ((float) height_stat_min * 0.114), height_stat_min_cell_x, height_stat_min_cell_y);
     printf("\nBottom left of image corresponds to cell (%d, %d). This could be useful if you want to re-import.\n", min_x, min_y );
 
     if (opt_image_type == RAW) {
@@ -534,12 +684,12 @@ int ExportImages(int opt_image_type, int opt_bpp, int opt_vclr, int opt_grid, in
         printf("Completed. The output file is called: %s\n", TA_BMP_OUT);
     }
 
-
     return 0;
 }
 
-int ExportTES3Land(char *input_esp_filename, int bpp, int opt_vclr, int opt_vtex)
+int ExportTES3Land(char *input_esp_filename, int opt_bpp, int opt_vclr, int opt_vtex)
 {
+    //printf("%s, %d, %d, %d\n", input_files.filename[i], opt_bpp, opt_vclr, opt_vtex);
     int size;	/* Size of current record.             */
 
     char s[40];	/* For storing the 16-byte header. */
@@ -666,6 +816,8 @@ int Process3LANDData(char *r, int size, int opt_vclr, int opt_vtex)
         return 1;
     }
 
+    printf("cell.current: (%d, %d)\n", cell.current_x, cell.current_y);
+
     if (strncmp("DATA", r + pos, 4) == 0) {
         nsize = bytes_to_int(r[pos+4], r[pos+5], r[pos+6], r[pos+7]);
         pos += 8 + nsize;
@@ -729,7 +881,7 @@ int Process3LANDData(char *r, int size, int opt_vclr, int opt_vtex)
                 ReplaceVTEX3Textures(r + pos + 8);
             }
 
-            StandardizeTES3VTEX(r + pos + 8, ntex);
+            StandardizeTES3VTEX((short unsigned int(*)[16])(r + pos + 8), ntex);
 
             fwrite(ntex, 512, 1, fp_land);
 
@@ -747,8 +899,6 @@ int Process3LANDData(char *r, int size, int opt_vclr, int opt_vtex)
 
         cleanup_list_x[cleanup_list_count] = cell.current_x;
         cleanup_list_y[cleanup_list_count++] = cell.current_y;
-
-    total_land_copied++;
 
     return 0;
 }
@@ -868,3 +1018,323 @@ int WriteLTEXdata(char *filename)
     return 0;
 }
 
+int Process3LTEXData(char *r, int size)
+{
+    short unsigned int i;
+        int pos = 0;
+        int nsize;
+
+        int index = 0;
+
+        char lname[128],
+             tname[128];
+
+        /*********************************************************
+         * Get the (hopefully) SCTX header.
+         ********************************************************/
+
+        if (strncmp("NAME", r + pos, 4) == 0) {
+                nsize = (int) r[pos+4];
+                strncpy(lname, r+pos+8, nsize);
+                pos += 8 +nsize;
+        }
+
+        if (strncmp("INTV", r + pos, 4) == 0) {
+                nsize = (int) r[pos+4];
+        memcpy(&index, r+pos+8, 4);
+                pos += 8 +nsize;
+        }
+
+        if (strncmp("DATA", r + pos, 4) == 0) {
+                nsize = (int) r[pos+4];
+                strncpy(tname, r+pos+8, nsize);
+                pos += 8 +nsize;
+        } else {
+                printf("Couldn't find LTEX DATA subrec!\n");
+                exit(1);
+        }
+
+    for (i = 0; i < ltex.count; i++) {
+        if (strcmp(ltex.texname[i], lname) == 0) {
+            vtex3_replace.old_values[vtex3_replace.replace_count] = vtex3_replace.myindex+1;
+            vtex3_replace.new_values[vtex3_replace.replace_count] = i+1;
+            vtex3_replace.replace_count++;
+            vtex3_replace.count++;
+            break;
+        }
+    }
+
+    if (i >= ltex.count) { // Not found, so this LTEX record must be added to the list.
+        if (GetFormIDForFilename(tname, ltex.texname[ltex.count], ltex.filename[ltex.count], ltex.formid[ltex.count])) {
+            ltex.count++;
+            ltex.texnum[ltex.count-1] = ltex.count;
+        } else {
+            fprintf(stderr, "Unable to populate an ltex FormID for %s: Not in my LTEX file!!\n", tname);
+            //exit(0);
+        }
+        vtex3_replace.old_values[vtex3_replace.replace_count] = vtex3_replace.myindex+1;
+        vtex3_replace.new_values[vtex3_replace.replace_count] = i+1;
+        vtex3_replace.count++;
+        vtex3_replace.replace_count++;
+    }
+    vtex3_replace.myindex++;
+
+        return 0;
+}
+
+
+int ReadLTEX3(char *filename)
+{
+    int i;
+
+    int p = 0,
+        index = 0;
+
+    char iname[128],
+         formid_ascii[64], // Only 8 should be necessary, but in case the file format is corrupt ...
+         s[512];
+
+    FILE *fp_lt;
+
+    if ((fp_lt = fopen(filename, "rb")) != 0) {
+        while (fgets(s, 512, fp_lt) != NULL) {
+            if (s[0] == '#') continue;
+            p = 0;
+
+            for (i = 0; s[i+p] != ',' && s[i+p] != '\0'; iname[i] = s[i+p], i++);
+            iname[i] = '\0';
+            index = atoi(iname);
+
+            p += i+1;
+            for (i = 0; s[i+p] != ',' && s[i+p] != '\0'; i++);
+
+            p += i+1;
+            for (i = 0; s[i+p] != ',' && s[i+p] != '\0' && s[i+p] != '\n' && s[i+p] != '\r'; i++);
+
+            p += i+1;
+            for (i = 0; s[i+p] != ',' && s[i+p] != '\0' && s[i+p] != '\n' && s[i+p] != '\r'; formid_ascii[i] = s[i+p], i++);
+            formid_ascii[i] = '\0';
+
+            StringToReverseFormID(formid_ascii, ltex.formid[ltex.count]);
+            ltex.texnum[ltex.count] = index;
+            ltex.count++;
+        }
+    } else {
+        fprintf(stderr, "\nUnable to open the TES3 LTEX texture to texture this landscape (%s) - this file can be optionally generated when you perform a heightmap export. But, %s.\n",
+            filename, strerror(errno));
+        fprintf(stderr, "This landscape will NOT be textured!\n\n");
+        return 1;
+    }
+
+    fclose(fp_lt);
+
+    return 0;
+}
+
+
+void GetVTEX34Cell(unsigned short int vtex[16][16], int ntex[34][34], int cell)
+{
+    int x, y;
+    int xs = 0, ys = 0;
+
+    char formid[4];
+
+    if (cell == 2 || cell == 4) xs = 8;
+    if (cell == 3 || cell == 4) ys = 8;
+
+    for (y = 0; y < 34; y++) {
+        for (x = 0; x < 34; x++) {
+            //ntex[y][x] = vtex[((int) ((float) (y+1) * 0.26))-1+ys][((int) ((float) (x+1) * 0.26))-1+xs];
+
+            if (GetFormIDFromTEXNum(vtex[(int) (((float) y * 0.242))+ys][(int) (((float) x * 0.242))+xs], formid)) {
+                memcpy(&ntex[y][x], formid, 4);
+            } else {
+                memset(&ntex[y][x], 0, 4);
+            }
+        }
+    }
+}
+
+int Match34TexturesQuad(int vtex4[34][34], char *vtex_record, int *vtex_size, int quad)
+{
+    int i, x, y;
+    int xs = 0, ys = 0;
+
+    char found = 0,
+         vtxt_record[2362]; // Maximum length = 8 x 17 x 17 = 2312 bytes.
+
+    unsigned short int vtxt_pos = 0;
+    unsigned short int grid_pos = 0;
+
+    float opacity = 1.0; // Texture opacity, we'll always have it full on.
+
+    struct {
+        int count;
+        unsigned short int texnum;
+        char formid[64][4];
+    } tex_list;
+
+    *vtex_size = 0;
+
+    if (quad == 1 || quad == 3) xs = 17;
+    if (quad == 2 || quad == 3) ys = 17;
+
+    // Make a list of all the FormIDs contained in the grid (maximum from 8x8 is 64).
+
+    tex_list.count = 0;
+
+    for (y = 0; y < 17; y++) {
+        for (x = 0; x < 17; x++) {
+            found = 0;
+            for (i = 0; i < tex_list.count; i++) {
+                if (memcmp(&vtex4[y+ys][x+xs], &tex_list.formid[i], 4) == 0) {
+                    found = 1;
+                }
+            }
+
+            if (!found && vtex4[y+ys][x+xs] != 0) {
+                memcpy(tex_list.formid[tex_list.count], &vtex4[y+ys][x+xs], 4);
+                tex_list.count++;
+                found = 0;
+            }
+        }
+    }
+
+    for (i = 0; i < tex_list.count; i++) {
+        if (tex_list.formid[i][0] == 0 &&
+            tex_list.formid[i][1] == 0 &&
+            tex_list.formid[i][2] == 0 &&
+            tex_list.formid[i][3] == 0)
+            continue;
+        sprintf(vtex_record + *vtex_size, "ATXT%c%c", 8, 0);
+        *vtex_size += 6;
+        memcpy(vtex_record + *vtex_size, &tex_list.formid[i], 4);
+        *vtex_size += 4;
+        sprintf(vtex_record + *vtex_size, "%c%c%c%c", quad, 121, i, 0);
+        *vtex_size += 4;
+
+        vtxt_pos = 0;
+
+        for (y = 0; y < 17; y++) {
+            for (x = 0; x < 17; x++) {
+                if (memcmp(&vtex4[y+ys][x+xs], &tex_list.formid[i], 4) == 0) {
+                    grid_pos = y*17 + x;
+                    memcpy(vtxt_record + vtxt_pos, &grid_pos, 2);
+                    sprintf(vtxt_record + vtxt_pos + 2, "%c%c", 0, 0);
+                    memcpy(vtxt_record + vtxt_pos + 4, &opacity, 4);
+                    vtxt_pos += 8;
+                }
+            }
+        }
+        sprintf(vtex_record + *vtex_size, "VTXT");
+        memcpy(vtex_record + *vtex_size + 4, &vtxt_pos, 2);
+        *vtex_size += 6;
+
+        memcpy(vtex_record + *vtex_size, vtxt_record, vtxt_pos);
+
+        *vtex_size += vtxt_pos;
+    }
+
+    return 0;
+}
+
+int GetFormIDFromTEXNum(unsigned short int texnum, char *FormID)
+{
+    int i;
+
+    for (i = 0; i < ltex.count; i++) {
+        if (ltex.texnum[i] == texnum) break;
+    }
+
+    if (ltex.texnum[i] == texnum) {
+        memcpy(FormID, ltex.formid[i], 4);
+        return 1;
+    } else {
+        memset(FormID, 0, 4);
+        return 0;
+    }
+}
+
+int FormIDToString(char *s, char *formid)
+{
+    sprintf(s, "%2.2X%2.2X%2.2X%2.2X",
+        (unsigned char) formid[3],
+        (unsigned char) formid[2],
+        (unsigned char) formid[1],
+        (unsigned char) formid[0]);
+
+        return 0;
+}
+
+int StringToReverseFormID(char *s, char *formid)
+{
+        int j;
+        char htmp[3];
+
+        for (j = 0; j < 4; j++) {
+                htmp[0] = s[(2*j)];
+                htmp[1] = s[(2*j)+1];
+                htmp[2] = '\0';
+
+                if (islower(htmp[0])) htmp[0] = toupper(htmp[0]);
+                if (islower(htmp[1])) htmp[1] = toupper(htmp[1]);
+
+        formid[3-j] = strtol(htmp, NULL, 16);
+        }
+
+        return 0;
+}
+
+int GetFormIDForFilename(char *tex_filename, char *ltex_name, char *ltex_filename, char *FormID)
+{
+    int i;
+
+    int p = 0;
+
+    char lname[128],
+         tname[128],
+         formid_ascii[64], // Only 8 should be necessary, but in case the file format is corrupt ...
+         s[512];
+
+    char filename[128];
+
+    FILE *fp_lt;
+
+    sprintf(filename, "%s", TES3_LTEX_DATA_FILE);
+    if ((fp_lt = fopen(filename, "rb")) != 0) {
+        while (fgets(s, 512, fp_lt) != NULL) {
+            if (s[0] == '#') continue;
+            p = 0;
+
+            for (i = 0; s[i+p] != ',' && s[i+p] != '\0'; i++);
+
+            p += i+1;
+            for (i = 0; s[i+p] != ',' && s[i+p] != '\0'; lname[i] = s[i+p], i++);
+            lname[i] = '\0';
+
+            p += i+1;
+            for (i = 0; s[i+p] != ',' && s[i+p] != '\0' && s[i+p] != '\n' && s[i+p] != '\r'; tname[i] = s[i+p], i++);
+            tname[i] = '\0';
+
+            p += i+1;
+            for (i = 0; s[i+p] != ',' && s[i+p] != '\0' && s[i+p] != '\n' && s[i+p] != '\r'; formid_ascii[i] = s[i+p], i++);
+            formid_ascii[i] = '\0';
+
+            if (strcmp(tex_filename, tname) == 0) break;
+        }
+    } else {
+        fprintf(stderr, "Unable to open the LTEX texture lookup file (%s): %s\n",
+            filename, strerror(errno));
+    }
+
+    fclose(fp_lt);
+
+    if (strcmp(tex_filename, tname) == 0) {
+        StringToReverseFormID(formid_ascii, FormID);
+        strcpy(ltex_name, lname);
+        strcpy(ltex_filename, tname);
+        return 1;
+    } else {
+        return 0;
+    }
+}

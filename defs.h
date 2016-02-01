@@ -86,11 +86,6 @@ struct cell_data {
 
 char rule[5][1024];
 
-static int min_x = 32768,
-    max_x = -32768,
-    min_y = 32768,
-    max_y = -32768;
-
 char log_message[512];
 char input_esp_filename[128];
 
@@ -98,30 +93,7 @@ char input_esp_filename[128];
 * Just some running totals.
 **************************/
 
-static int total_cells = 0,                /* Total CELL records found in the file. */
-    total_records_changed = 0,      /* LAND or CELL records changed/copied.  */
-    total_cells_copied = 0,
-    total_land_copied = 0,
-    total_worlds = 0,
-    total_objects = 0,              /* Total objects found in the file.      */
-    total_objects_changed = 0,      /* Total objects changed/copied.         */
-    total_scripts = 0,              /* Total SCPT records found in the file. */
-    total_scripts_changed = 0,      /* Total SCPT records modified.          */
-    total_dialogs = 0,              /* Total INFO scripts found in the file. */
-    total_dialogs_changed = 0;      /* Total INFO records modified.          */
-
 char *last_cell_data;
-
-
-static int i = 0,                     /* A loop variable.                                                          */
-    verbose_mode = 0,          /* Command line option: Option to produce an extensive log file.             */
-    list_cell_mode = 0,        /* Command line option: Option to produce a file listing the plugin's cells. */
-    show_rules_mode = 0,       /* Command line option: Option to display verbose form of rules then exit.   */
-    modify_script_mode = 1,    /* Command line option: Option to modify scripts if necessary: Default on.   */
-    generate_specific_esp = 0, /* Command line option: Option to create a new ESP only containing changes.  */
-    pass = 0,                  /* Current file pass. Tesfaith runs through the ESP/ESM in 2 passes.         */
-    num_scripts_to_recompile=0,/* Record the number of modified scripts that'll need recompiling in TESCS.  */
-    last_cell_size = 0;
 
 #define TMP_CELL_FILENAME               "cell%d.tmp"
 
