@@ -1,4 +1,4 @@
-/* TESAnnwyn: A TES3/TES4 height map importer/exporter (to & from RAW or BMP).
+/* TESAnnwyn: A TES3 height map importer/exporter (to & from RAW or BMP).
  *
  * Paul Halliday: 31-Dec-2006
  * Bret Curtis: 2015

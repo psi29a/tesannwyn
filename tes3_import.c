@@ -1,4 +1,4 @@
-/* TES3Annwyn: A TES3/TES4 height map importer/exporter (to & from RAW or BMP).
+/* TES3Annwyn: A TES3 height map importer/exporter (to & from RAW or BMP).
  *
  * Paul Halliday: 31-Dec-2006
  * Bret Curtis: 2015
@@ -241,7 +241,7 @@ int ImportImage(char *input_filename, int opt_bpp, int opt_vclr, int opt_sx,
                 flag_ignore_land = 0;
             } else {
                 WriteTES3CELLRecord(cx + opt_x_cell_offset, cy + opt_y_cell_offset, fp_out);
-                WriteTES3LANDRecord(cx + opt_x_cell_offset, cy + opt_y_cell_offset, opt_adjust_height, &image, vclr_image, vtex_image, fp_out, opt_vtex, opt_vclr, &total_overflows, &total_underflows, opt_texture);
+                WriteTES3LANDRecord(cx + opt_x_cell_offset, cy + opt_y_cell_offset, opt_adjust_height, (int (*)[]) &image, vclr_image, vtex_image, fp_out, opt_vtex, opt_vclr, &total_overflows, &total_underflows, opt_texture);
             }
         }
     }

@@ -1,5 +1,5 @@
 /*
- * TESAnnwyn: A TES3/TES4 height map importer/exporter (to & from RAW or BMP).
+ * TESAnnwyn: A TES3 height map importer/exporter (to & from RAW or BMP).
  *
  * Paul Halliday: 31-Dec-2006
  * Bret Curtis: 2015
@@ -61,7 +61,6 @@ struct {
     short unsigned int old_values[1024];
     short unsigned int new_values[1024];
 } vtex3_replace;
-
 
 enum { EXTERIOR, INTERIOR, TRUE, FALSE };
 
