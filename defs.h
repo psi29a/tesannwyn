@@ -44,8 +44,6 @@
 enum { UNKNOWN, IMPORT, EXPORT };
 enum { UNKNOWN_IMAGE, RAW, BMP, CSV };
 
-#define	TES_MORROWIND	"Morrowind"
-
 struct {
     char name[256];
     char fname[256];

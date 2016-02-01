@@ -39,7 +39,6 @@ int main(int argc, char *argv[])
     int opt_mode = UNKNOWN,
         opt_tes_ver = 3,
         opt_bpp = 16,
-        opt_cell_data = 0,
         opt_image_type = UNKNOWN_IMAGE,
         opt_sx = 1024,
         opt_sy = 1024,
@@ -52,14 +51,12 @@ int main(int argc, char *argv[])
         opt_lower_limit = -2147483647,
         opt_upper_limit = 2147483647,
         opt_grid = -1,
-        opt_quiet = 0,
         opt_usertex = 0,
         opt_ignore_land_upper = -1073741824,
         opt_ignore_land_lower  = 1073741824,
         opt_vtex = 0;
 
-    float opt_scale = 1.0,
-          opt_v_overlap = 0.25;
+    float opt_scale = 1.0;
 
     char c,
          s[256],
@@ -71,10 +68,6 @@ int main(int argc, char *argv[])
          opt_texture[32];
 
     opt_texture[0] = '\0';
-
-    char *opt_tes_mode = TES_MORROWIND;
-
-    int maxlayer = 0;
 
     FILE *fp_in;
 
@@ -88,7 +81,7 @@ int main(int argc, char *argv[])
 
     argn = argc;
 
-    while ((c = getopt(argc, argv, "ied:x:y:m:n:s:h:p:b:o:w:t:u:E:Tl:0zcCgrvVq")) != EOF) {
+    while ((c = getopt(argc, argv, "ied:x:y:s:h:p:b:o:w:t:u:Tl:0zcgrvV")) != EOF) {
         switch (c) {
             case 'i':
                 opt_mode = IMPORT;
@@ -99,21 +92,11 @@ int main(int argc, char *argv[])
             case 'c':
                 opt_vclr = 1;
                 break;
-            case 'C':
-                opt_cell_data = 1;
-                break;
             case 'g':
                 opt_grid = 0;
                 break;
             case 'T':
                 opt_vtex = 3;
-                break;
-            case 'E':
-                if (optarg) {
-                        opt_v_overlap = atof(optarg);
-                        argn -= 2;
-                } else
-                        ShowUsageExit(argv[0]);
                 break;
             case 'b':
                 if (optarg) {
@@ -129,9 +112,6 @@ int main(int argc, char *argv[])
                         argn -= 2;
                 } else
                         ShowUsageExit(argv[0]);
-                break;
-            case 'q':
-                opt_quiet = 1;
                 break;
             case 'w':
                 opt_mode = EXPORT;
@@ -176,26 +156,6 @@ int main(int argc, char *argv[])
                         ShowUsageExit(argv[0]);
                 }
                 break;
-        case 'm':
-                fprintf(stderr, "\nPlease note: The '-m' and '-n' options have been replaced by a single '-d' option.\ne.g. To specify dimensions of 1280x1024, please use: '-d 1280x1024' instead.\n\n");
-                exit(1);
-                if (optarg) {
-                        opt_sx = atoi(optarg);
-                        argn -= 2;
-                } else {
-                        ShowUsageExit(argv[0]);
-                }
-                break;
-        case 'n':
-            fprintf(stderr, "\nPlease note: The '-m' and '-n' options have been replaced by a single '-d' option.\ne.g. To specify dimensions of 1280x1024, please use: '-d 1280x1024' instead.\n\n");
-            exit(1);
-                if (optarg) {
-                        opt_sy = atoi(optarg);
-                        argn -= 2;
-                } else {
-                        ShowUsageExit(argv[0]);
-                }
-                break;
         case 's':
                 if (optarg) {
                         opt_scale = (float) atof(optarg);
@@ -214,32 +174,32 @@ int main(int argc, char *argv[])
                 break;
         case 'l':
             if (optarg) {
-                                    strcpy(opt_limit_string, optarg);
+                strcpy(opt_limit_string, optarg);
                 DecodeLimits(opt_limit_string, &opt_lower_limit, &opt_upper_limit);
-                                    argn -= 2;
+                argn -= 2;
                 opt_limit = 1;
-                            } else {
-                                    ShowUsageExit(argv[0]);
-                            }
+            } else {
+                ShowUsageExit(argv[0]);
+            }
             break;
         case 'o':
-                if (optarg) {
-                        strcpy(opt_ignore_land_string, optarg);
-                        DecodeOptIgnoreLand(opt_ignore_land_string, &opt_ignore_land_lower, &opt_ignore_land_upper);
-                        argn -= 2;
-                } else {
-                        ShowUsageExit(argv[0]);
-                }
-                break;
+            if (optarg) {
+                    strcpy(opt_ignore_land_string, optarg);
+                    DecodeOptIgnoreLand(opt_ignore_land_string, &opt_ignore_land_lower, &opt_ignore_land_upper);
+                    argn -= 2;
+            } else {
+                    ShowUsageExit(argv[0]);
+            }
+            break;
         case 'u':
             if (optarg) {
                 opt_usertex = 1;
-                                    strcpy(opt_limit_string, optarg);
+                strcpy(opt_limit_string, optarg);
                 DecodeUserTexture(opt_limit_string, usertex.name, usertex.fname);
-                                    argn -= 2;
-                            } else {
-                                ShowUsageExit(argv[0]);
-                            }
+                argn -= 2;
+            } else {
+                ShowUsageExit(argv[0]);
+            }
                 break;
         case 'r':
             opt_rescale = 1;
@@ -247,10 +207,9 @@ int main(int argc, char *argv[])
         case 'v':
         case 'V':
                 printf("Program Name: %s\n"
-                       "Version:      0.23\n"
-                       "Date:         Dec-2006 -> Nov-2011\n"
-                       "Author:       Paul Halliday (Ocean_Lightwave@yahoo.co.uk)\n"
-                       "Website: oceanlightwave.com\n",
+                       "Version:      0.25\n"
+                       "Date:         2006 -> 2016\n"
+                       "Author:       Paul Halliday and Bret Curtis\n",
                         APP_NAME);
                 exit(0);
         default:
