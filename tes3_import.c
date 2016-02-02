@@ -299,8 +299,6 @@ int CatchGradientOverflows(int *gradient)
 
 int WriteTES3LANDRecord(int cx, int cy, int opt_adjust_height, int image[66][66], char vclr[66][66][3], short unsigned int vtex3[16][16], FILE *fp_out, int opt_vtex, int opt_vclr, int *total_overflows, int *total_underflows, char *opt_texture)
 {
-    int i, x, y;
-
     short int tex_num = 0;
     int size = 0;
 
@@ -318,26 +316,26 @@ int WriteTES3LANDRecord(int cx, int cy, int opt_adjust_height, int image[66][66]
     memset(grad, 0, sizeof(grad));
     memset(igrad, 0, sizeof(igrad));
 
-    for (y = 1; y < 65; y++) {
-        for (x = 1; x < 65; x++) {
+    for (int y = 1; y < 65; y++) {
+        for (int x = 1; x < 65; x++) {
             igrad[y][x] = image[y][x] - image[y][x-1];
             CatchGradientOverflows(&igrad[y][x]);
         }
     }
 
     // Calculate Column 0.
-    for (y = 1; y < 65 ; y++) {
+    for (int y = 1; y < 65 ; y++) {
         igrad[y][0] = image[y][0] - image[y-1][0];
     }
 
     // Calculate Row 0.
-    for (x = 1; x < 65 ; x++) {
+    for (int x = 1; x < 65 ; x++) {
         igrad[0][x] = image[0][x] - image[0][x-1];
         CatchGradientOverflows(&igrad[0][x]);
     }
 
-    for (y = 0; y < 65; y++) {
-        for (x = 0; x < 65; x++) {
+    for (int y = 0; y < 65; y++) {
+        for (int x = 0; x < 65; x++) {
             grad[y][x] = (unsigned char) igrad[y][x];
         }
     }
@@ -353,7 +351,7 @@ int WriteTES3LANDRecord(int cx, int cy, int opt_adjust_height, int image[66][66]
     fprintf(fp_out, "LAND");
     fwrite(&size, 4, 1, fp_out);
 
-    for (i = 0; i < 8; i++) {
+    for (int i = 0; i < 8; i++) {
         fputc(0, fp_out);
     }
     fprintf(fp_out, "INTV%c%c%c%c", 8, 0, 0, 0);
@@ -371,8 +369,8 @@ int WriteTES3LANDRecord(int cx, int cy, int opt_adjust_height, int image[66][66]
 
     fprintf(fp_out, "VNML%c%c%c%c", 131, 49, 0, 0);
 
-    for (y = 0; y < 65; y++) {
-        for (x = 0; x < 65; x++) {
+    for (int y = 0; y < 65; y++) {
+        for (int x = 0; x < 65; x++) {
             v1[0] = 16; 	// = 128/8
             v1[1] = 0;
             v1[2] = image[y][x+1] - image[y][x];
@@ -404,8 +402,8 @@ int WriteTES3LANDRecord(int cx, int cy, int opt_adjust_height, int image[66][66]
     height_offset = (float) image[0][0];
     fwrite(&height_offset, 4, 1, fp_out);
 
-    for (y = 0; y < 65; y++) {
-        for (x = 0; x < 65; x++) {
+    for (int y = 0; y < 65; y++) {
+        for (int x = 0; x < 65; x++) {
             fputc(grad[y][x], fp_out);
         }
     }
@@ -413,14 +411,14 @@ int WriteTES3LANDRecord(int cx, int cy, int opt_adjust_height, int image[66][66]
     fprintf(fp_out, "%c%c%c", 0, 0, 0);
 
     fprintf(fp_out, "WNAM%c%c%c%c", 81, 0, 0, 0);
-    for (i = 0; i < 81; i++) {
+    for (int i = 0; i < 81; i++) {
         fputc(128, fp_out);
     }
 
     if (opt_vclr != 0) {
         fprintf(fp_out, "VCLR%c%c%c%c", 131, 49, 0, 0);
-        for (y = 0; y < 65; y++) {
-            for (x = 0; x < 65; x++) {
+        for (int y = 0; y < 65; y++) {
+            for (int x = 0; x < 65; x++) {
                 fputc(vclr[y][x][2], fp_out);
                 fputc(vclr[y][x][1], fp_out);
                 fputc(vclr[y][x][0], fp_out);
@@ -431,7 +429,7 @@ int WriteTES3LANDRecord(int cx, int cy, int opt_adjust_height, int image[66][66]
     if (opt_texture[0] != '\0') {
         tex_num = atoi(opt_texture);
         fprintf(fp_out, "VTEX%c%c%c%c", 0, 2, 0, 0);
-        for (i = 0; i < 256; i++) {
+        for (int i = 0; i < 256; i++) {
             fwrite(&tex_num, 2, 1, fp_out);
         }
     } else if (opt_vtex > 0) {
@@ -700,58 +698,57 @@ int StandardizeBMP2RAW(char *input_filename, char *output_filename, int *sx, int
 
 int WriteTES3LTEX(FILE *fp_out, int *total_records)
 {
-        int i = 0,
-            p = 0,
-            index = 0,
-            i1, i2;
+    char s[1024];
+    FILE *fp_lt;
 
-        char lname[128],
-             tname[128],
-             iname[128],
-             s[1024];
+    if ((fp_lt = fopen(TES3_LTEX_DATA_FILE, "rb")) != 0) {
+        while (fgets(s, 1024, fp_lt) != NULL) {
+            int i = 0,
+                p = 0,
+                index = 0,
+                i1, i2;
 
-        FILE *fp_lt;
+            char lname[128],
+                 tname[128],
+                 iname[128];
 
-        if ((fp_lt = fopen(TES3_LTEX_DATA_FILE, "rb")) != 0) {
-                while (fgets(s, 1024, fp_lt) != NULL) {
-                        if (s[0] == '#') continue; // Ignore lines beginning with #
+            if (s[0] == '#') continue; // Ignore lines beginning with #
+            //sscanf(s, "%d,%s,%s\n", &index, lname, tname);
 
-                        //sscanf(s, "%d,%s,%s\n", &index, lname, tname);
-                        for (i = 0; s[i] != ',' && s[i] != '\0'; iname[i] = s[i], i++);
-                        iname[i] = '\0';
+            for (i = 0; s[i] != ',' && s[i] != '\0'; iname[i] = s[i], i++);
+            iname[i] = '\0';
 
-                        p = i+1;
-                        for (i = 0; s[i+p] != ',' && s[i+p] != '\0'; lname[i] = s[i+p], i++);
-                        lname[i] = '\0';
+            p = i+1;
+            for (i = 0; s[i+p] != ',' && s[i+p] != '\0'; lname[i] = s[i+p], i++);
+            lname[i] = '\0';
 
-                        p += i+1;
-                        for (i = 0; s[i+p] != ',' && s[i+p] != '\0' && s[i+p] != '\n' && s[i+p] != '\r'; tname[i]
- = s[i+p], i++);
-                        tname[i] = '\0';
+            p += i+1;
+            for (i = 0; s[i+p] != ',' && s[i+p] != '\0' && s[i+p] != '\n' && s[i+p] != '\r'; tname[i] = s[i+p], i++);
+            tname[i] = '\0';
 
-                        index = atoi(iname);
+            index = atoi(iname);
 
-                        i2 = (int) index / 256;
-                        i1 = (int) index - (256*i2);
+            i2 = (int) index / 256;
+            i1 = (int) index - (256*i2);
 
-                        fprintf(fp_out, "LTEX%c%c%c%c", 30 + (int) strlen(lname) + (int) strlen(tname), 0, 0, 0);
-                        for (i = 0; i < 8; i++) {
-                                fputc(0, fp_out);
-                        }
+            fprintf(fp_out, "LTEX%c%c%c%c", 30 + (int) strlen(lname) + (int) strlen(tname), 0, 0, 0);
+            for (i = 0; i < 8; i++) {
+                fputc(0, fp_out);
+            }
 
-                        fprintf(fp_out, "NAME%c%c%c%c%s%c", (int) strlen(lname)+1, 0, 0, 0, lname, 0);
-                        fprintf(fp_out, "INTV%c%c%c%c%c%c%c%c", 4, 0, 0, 0, i1, i2 , 0, 0);
-                        fprintf(fp_out, "DATA%c%c%c%c%s%c", (int) strlen(tname)+1, 0, 0, 0, tname, 0);
-                        total_records++;
-                }
-                fclose(fp_lt);
-        } else {
-                fprintf(stderr, "Warning: Cannot open your TES3 land textures data (%s) file for reading: %s\n",
-                        TES3_LTEX_DATA_FILE, strerror(errno));
-                return 1;
+            fprintf(fp_out, "NAME%c%c%c%c%s%c", (int) strlen(lname)+1, 0, 0, 0, lname, 0);
+            fprintf(fp_out, "INTV%c%c%c%c%c%c%c%c", 4, 0, 0, 0, i1, i2 , 0, 0);
+            fprintf(fp_out, "DATA%c%c%c%c%s%c", (int) strlen(tname)+1, 0, 0, 0, tname, 0);
+            total_records++;
         }
+        fclose(fp_lt);
+    } else {
+            fprintf(stderr, "Warning: Cannot open your TES3 land textures data (%s) file for reading: %s\n",
+                    TES3_LTEX_DATA_FILE, strerror(errno));
+            return 1;
+    }
 
-        return 0;
+    return 0;
 }
 
 int ReadVTEX3(char *s_vtex, int tex_size, int cx, int cy, int y, int sx, int sy, FILE *fp_vtex)

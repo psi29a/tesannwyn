@@ -666,24 +666,14 @@ int ExportImages(int opt_image_type, int opt_bpp, int opt_vclr, int opt_grid, in
 
 int ExportTES3Land(char *input_esp_filename, int opt_bpp, int opt_vclr, int opt_vtex)
 {
-    int size;	/* Size of current record.             */
-
     char s[40];	/* For storing the 16-byte header. */
-    char *or;	/* Pointer to the Original Record. */
-
     FILE *fpin;	/* Input File Stream (original ESP/ESM).      */
 
-    /*
-     * Reset texture replacement list.
-     */
-
+    /* Reset texture replacement list. */
     vtex3_replace.myindex = 0;
     vtex3_replace.replace_count = 0;
 
-    /*
-     * Open the ESP (input file) for reading.
-     */
-
+    /* Open the ESP (input file) for reading. */
     if ((fpin = fopen(input_esp_filename, "rb")) == NULL) {
         fprintf(stderr, "Unable to open %s for reading: %s\n",
             input_esp_filename, strerror(errno));
@@ -691,13 +681,13 @@ int ExportTES3Land(char *input_esp_filename, int opt_bpp, int opt_vclr, int opt_
     }
 
     /* TES3 records follows the format of TYPE (4 bytes) then
-     * the record length (4 bytes) - which we put in to the variable, size.
-     */
+     * the record length (4 bytes) - which we put in to the variable, size. */
     while (fread(s, 1, 16, fpin) > 0) {
         cell.current_x = 0;
         cell.current_y = 0;
 
-        size = bytes_to_int(s[4], s[5], s[6], s[7]) + 16;
+        /* Size of current record. */
+        int size = bytes_to_int(s[4], s[5], s[6], s[7]) + 16;
 
         /* Create some memory space to store the full orignal record
          * and an additional copy (nr) which may be modified.
@@ -706,10 +696,10 @@ int ExportTES3Land(char *input_esp_filename, int opt_bpp, int opt_vclr, int opt_
          * (with Cygwin when compiling a static binary) with reallocing
          * more space (causes problems with free(or)) later.
          * A Morrowind script can now grow by 2K without causing any
-         * problems - e.g. That's several hundred position updates in one script.
-         */
+         * problems - e.g. That's several hundred position updates in one script. */
 
-        if ((or = (void *) malloc(size)) == NULL) {
+        char *or = (void *) malloc(size);	/* Pointer to the Original Record. */
+        if (or == NULL) {
             fprintf(stderr, "Unable to allocate %d bytes of"
                 " memory to store TES file record: %s\n",
                 size, strerror(errno));
@@ -875,19 +865,14 @@ int Process3LANDData(char *r, int size, int opt_vclr, int opt_vtex)
 
 int ReplaceVTEX3Textures(char *vtex)
 {
-    int i, j;
-    short unsigned int tex;
-
-    for (i = 0; i < 256; i++) {
-        tex = (short unsigned int) *(vtex+(2*i));
-        for (j = 0; j < vtex3_replace.replace_count; j++) {
+    for (int i = 0; i < 256; i++) {
+        short unsigned int tex = (short unsigned int) *(vtex+(2*i));
+        for (int j = 0; j < vtex3_replace.replace_count; j++) {
             if (vtex3_replace.old_values[j] == tex) {
                 *(vtex+(2*i)) = vtex3_replace.new_values[j];
             }
         }
-
     }
-
     return 0;
 }
 
@@ -1004,24 +989,24 @@ int Process3LTEXData(char *r, int size)
      ********************************************************/
 
     if (strncmp("NAME", r + pos, 4) == 0) {
-            nsize = (int) r[pos+4];
-            strncpy(lname, r+pos+8, nsize);
-            pos += 8 +nsize;
+        nsize = (int) r[pos+4];
+        strncpy(lname, r+pos+8, nsize);
+        pos += 8 + nsize;
     }
 
     if (strncmp("INTV", r + pos, 4) == 0) {
-            nsize = (int) r[pos+4];
-    memcpy(&index, r+pos+8, 4);
-            pos += 8 +nsize;
+        nsize = (int) r[pos+4];
+        memcpy(&index, r+pos+8, 4);
+        pos += 8 + nsize;
     }
 
     if (strncmp("DATA", r + pos, 4) == 0) {
-            nsize = (int) r[pos+4];
-            strncpy(tname, r+pos+8, nsize);
-            pos += 8 +nsize;
+        nsize = (int) r[pos+4];
+        strncpy(tname, r+pos+8, nsize);
+        // pos += 8 + nsize;
     } else {
-            printf("Couldn't find LTEX DATA subrec!\n");
-            exit(1);
+        printf("Couldn't find LTEX DATA subrec!\n");
+        exit(1);
     }
 
     for (i = 0; i < ltex.count; i++) {
@@ -1055,25 +1040,20 @@ int Process3LTEXData(char *r, int size)
 
 int ReadLTEX3(char *filename)
 {
-    int i;
-
-    int p = 0,
-        index = 0;
-
-    char iname[128],
-         formid_ascii[64], // Only 8 should be necessary, but in case the file format is corrupt ...
-         s[512];
-
+    char  s[512];
     FILE *fp_lt;
 
     if ((fp_lt = fopen(filename, "rb")) != 0) {
         while (fgets(s, 512, fp_lt) != NULL) {
             if (s[0] == '#') continue;
-            p = 0;
+            char iname[128],
+                 formid_ascii[64]; /* Only 8 should be necessary, but in case the file format is corrupt ... */
+            int i = 0,
+                p = 0;
 
             for (i = 0; s[i+p] != ',' && s[i+p] != '\0'; iname[i] = s[i+p], i++);
             iname[i] = '\0';
-            index = atoi(iname);
+            int index = atoi(iname);
 
             p += i+1;
             for (i = 0; s[i+p] != ',' && s[i+p] != '\0'; i++);
@@ -1232,35 +1212,30 @@ int FormIDToString(char *s, char *formid)
         (unsigned char) formid[2],
         (unsigned char) formid[1],
         (unsigned char) formid[0]);
-
-        return 0;
+    return 0;
 }
 
 int StringToReverseFormID(char *s, char *formid)
 {
-        int j;
-        char htmp[3];
+    int j;
+    char htmp[3];
 
-        for (j = 0; j < 4; j++) {
-                htmp[0] = s[(2*j)];
-                htmp[1] = s[(2*j)+1];
-                htmp[2] = '\0';
+    for (j = 0; j < 4; j++) {
+        htmp[0] = s[(2*j)];
+        htmp[1] = s[(2*j)+1];
+        htmp[2] = '\0';
 
-                if (islower(htmp[0])) htmp[0] = toupper(htmp[0]);
-                if (islower(htmp[1])) htmp[1] = toupper(htmp[1]);
+        if (islower(htmp[0])) htmp[0] = toupper(htmp[0]);
+        if (islower(htmp[1])) htmp[1] = toupper(htmp[1]);
 
-        formid[3-j] = strtol(htmp, NULL, 16);
-        }
+    formid[3-j] = strtol(htmp, NULL, 16);
+    }
 
-        return 0;
+    return 0;
 }
 
 int GetFormIDForFilename(char *tex_filename, char *ltex_name, char *ltex_filename, char *FormID)
 {
-    int i;
-
-    int p = 0;
-
     char lname[128],
          tname[128],
          formid_ascii[64], // Only 8 should be necessary, but in case the file format is corrupt ...
@@ -1274,7 +1249,8 @@ int GetFormIDForFilename(char *tex_filename, char *ltex_name, char *ltex_filenam
     if ((fp_lt = fopen(filename, "rb")) != 0) {
         while (fgets(s, 512, fp_lt) != NULL) {
             if (s[0] == '#') continue;
-            p = 0;
+            int i = 0,
+                p = 0;
 
             for (i = 0; s[i+p] != ',' && s[i+p] != '\0'; i++);
 
