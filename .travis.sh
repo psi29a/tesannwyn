@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 #
 # Build script for travis-ci.org builds to handle compiles and static
 # analysis when ANALYZE=true.
@@ -10,7 +10,7 @@ if [ "$ANALYZE" = "true" ]; then
         cppcheck --error-exitcode=1 --quiet .
         cppcheck --template "{file}({line}): {severity} ({id}): {message}" \
             --enable=style --force --std=c11 -j 2 --inline-suppr \
-            *.{h,c} 2> cppcheck.txt
+            ./*.{h,c} 2> cppcheck.txt
         if [ -s cppcheck.txt ]; then
             cat cppcheck.txt
             exit 0
