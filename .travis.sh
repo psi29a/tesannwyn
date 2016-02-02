@@ -10,7 +10,7 @@ if [ "$ANALYZE" = "true" ]; then
         cppcheck --error-exitcode=1 --quiet .
         cppcheck --template "{file}({line}): {severity} ({id}): {message}" \
             --enable=style --force --std=c11 -j 2 --inline-suppr \
-            tesannwyn.c 2> cppcheck.txt
+            *.{h,c} 2> cppcheck.txt
         if [ -s cppcheck.txt ]; then
             cat cppcheck.txt
             exit 0

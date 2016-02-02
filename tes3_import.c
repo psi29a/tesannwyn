@@ -27,7 +27,7 @@ int ImportImage(char *input_filename, int opt_bpp, int opt_vclr, int opt_sx,
                 int opt_y_cell_offset, int opt_ignore_land_upper,
                 int opt_ignore_land_lower, char *opt_texture, float opt_scale)
 {
-    int i,
+    int
         x,
         y,
         cx,
@@ -251,7 +251,7 @@ int ImportImage(char *input_filename, int opt_bpp, int opt_vclr, int opt_sx,
     if (opt_vclr) fclose(fp_vclr);
 
     if (opt_vtex) {
-        for (i = 0; i < MAX_LAYERS; i++) {
+        for (int i = 0; i < MAX_LAYERS; i++) {
             if (fp_vtex[i] != NULL) fclose(fp_vtex[i]);
         }
     }
