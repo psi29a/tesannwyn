@@ -683,8 +683,6 @@ int ExportTES3Land(char *input_esp_filename, int opt_bpp, int opt_vclr, int opt_
     /* TES3 records follows the format of TYPE (4 bytes) then
      * the record length (4 bytes) - which we put in to the variable, size. */
     while (fread(s, 1, 16, fpin) > 0) {
-        cell.current_x = 0;
-        cell.current_y = 0;
 
         /* Size of current record. */
         int size = bytes_to_int(s[4], s[5], s[6], s[7]) + 16;
@@ -758,7 +756,9 @@ int Process3LANDData(char *r, int size, int opt_vclr, int opt_vtex)
         nsize = 0,
         vnml_size = 0,
         vnml_pos = 0,
-        vhgt_pos = 0;
+        vhgt_pos = 0,
+        current_x = 0,
+        current_y = 0;
 
     unsigned short int ntex[16][16];
 
@@ -770,8 +770,8 @@ int Process3LANDData(char *r, int size, int opt_vclr, int opt_vtex)
      * Get the (hopefully) INTV  header and X, Y co-ordinates.
      ********************************************************/
     if (strncmp("INTV", r, 4) == 0) {
-        cell.current_x = bytes_to_int(r[8], r[9], r[10], r[11]);
-        cell.current_y = bytes_to_int(r[12], r[13], r[14], r[15]);
+        current_x = bytes_to_int(r[8], r[9], r[10], r[11]);
+        current_y = bytes_to_int(r[12], r[13], r[14], r[15]);
         pos += 16;
     } else {
         fprintf(stderr, "WARNING: I couldn't find the INTV header for this TES3 LAND record (got [%c%c%c%c] - ignoring record.\n",
@@ -797,7 +797,7 @@ int Process3LANDData(char *r, int size, int opt_vclr, int opt_vtex)
         return -1;
     }
 
-        sprintf(tmp_land_filename, "%s/land.%d.%d.tmp", TA_TMP_DIR, cell.current_x, cell.current_y);
+        sprintf(tmp_land_filename, "%s/land.%d.%d.tmp", TA_TMP_DIR, current_x, current_y);
 
         if ((fp_land = fopen(tmp_land_filename, "wb")) == 0) {
                 fprintf(stderr, "Unable to create a temporary cell file for writing, %s: %s\n",
@@ -816,7 +816,7 @@ int Process3LANDData(char *r, int size, int opt_vclr, int opt_vtex)
         memcpy(&nsize, r + pos + 4, 4);
 
         if (opt_vclr && strncmp("VCLR", r + pos, 4) == 0) {
-                sprintf(tmp_land_filename, "%s/vclr.%d.%d.tmp", TA_TMP_DIR, cell.current_x, cell.current_y);
+                sprintf(tmp_land_filename, "%s/vclr.%d.%d.tmp", TA_TMP_DIR, current_x, current_y);
 
                 if ((fp_land = fopen(tmp_land_filename, "wb")) == 0) {
                         fprintf(stderr, "Unable to create a temporary cell file for writing, %s: %s\n",
@@ -828,7 +828,7 @@ int Process3LANDData(char *r, int size, int opt_vclr, int opt_vtex)
 
             fclose(fp_land);
         } else if (strncmp("VTEX", r + pos, 4) == 0 && opt_vtex) {
-                sprintf(tmp_land_filename, "%s/vtex3.%d.%d.tmp", TA_TMP_DIR, cell.current_x, cell.current_y);
+                sprintf(tmp_land_filename, "%s/vtex3.%d.%d.tmp", TA_TMP_DIR, current_x, current_y);
 
                 if ((fp_land = fopen(tmp_land_filename, "wb")) == 0) {
                         fprintf(stderr, "Unable to create a temporary cell file for writing, %s: %s\n",
@@ -851,14 +851,14 @@ int Process3LANDData(char *r, int size, int opt_vclr, int opt_vtex)
         pos += 8 + nsize;
     }
 
-        if (cell.current_x < min_x) min_x = cell.current_x;
-        if (cell.current_x > max_x) max_x = cell.current_x;
+        if (current_x < min_x) min_x = current_x;
+        if (current_x > max_x) max_x = current_x;
 
-        if (cell.current_y < min_y) min_y = cell.current_y;
-        if (cell.current_y > max_y) max_y = cell.current_y;
+        if (current_y < min_y) min_y = current_y;
+        if (current_y > max_y) max_y = current_y;
 
-        cleanup_list_x[cleanup_list_count] = cell.current_x;
-        cleanup_list_y[cleanup_list_count++] = cell.current_y;
+        cleanup_list_x[cleanup_list_count] = current_x;
+        cleanup_list_y[cleanup_list_count++] = current_y;
 
     return 0;
 }
@@ -914,39 +914,6 @@ int StandardizeTES3VTEX(unsigned short int vtex[16][16], unsigned short int ntex
     return 0;
 }
 
-int DeStandardizeTES3VTEX(unsigned short int vtex[16][16], unsigned short int ntex[16][16])
-{
-    int i, j, k, l, q;
-    int qx, qy;
-
-    int vtpointer;
-    char *vtpos;
-
-    memset(vtex, 0, 512);
-
-    vtpos = (void *) &vtex[0][0];
-
-    for (q = 0; q < 4; q++) {
-                if (q == 0)      { qx = 0; qy = 0; vtpointer = 0;   }
-                else if (q == 1) { qx = 8; qy = 0; vtpointer = 64;  }
-                else if (q == 2) { qx = 0; qy = 8; vtpointer = 256; }
-                else if (q == 3) { qx = 8; qy = 8; vtpointer = 320; }
-
-        for (i = 0; i < 2; i++) {
-            vtpointer += (i*64);
-            for (j = 0; j < 2; j++) {
-                for (k = 0; k < 4; k++) {
-                    for (l = 0; l < 4; l++) {
-                        memcpy((vtpos + vtpointer), &ntex[qy+k+(4*i)][qx+l+(4*j)], 2);
-                        vtpointer += 2;
-                    }
-                }
-            }
-        }
-    }
-
-    return 0;
-}
 
 int WriteLTEXdata(char *filename)
 {

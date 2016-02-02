@@ -311,8 +311,6 @@ int WriteTES3LANDRecord(int cx, int cy, int opt_adjust_height, int image[66][66]
     int igrad[65][65]; // An integer version of the gradients, useful for identifying over/underflows.
     char grad[65][65]; // 8-bit gradients, as required in the ESP format.
 
-    short unsigned int ntex[16][16];
-
     memset(grad, 0, sizeof(grad));
     memset(igrad, 0, sizeof(igrad));
 
@@ -434,6 +432,7 @@ int WriteTES3LANDRecord(int cx, int cy, int opt_adjust_height, int image[66][66]
         }
     } else if (opt_vtex > 0) {
         fprintf(fp_out, "VTEX%c%c%c%c", 0, 2, 0, 0);
+        short unsigned int ntex[16][16];
         DeStandardizeTES3VTEX(ntex, vtex3);
         fwrite(ntex, 512, 1, fp_out);
     }
@@ -743,9 +742,9 @@ int WriteTES3LTEX(FILE *fp_out, int *total_records)
         }
         fclose(fp_lt);
     } else {
-            fprintf(stderr, "Warning: Cannot open your TES3 land textures data (%s) file for reading: %s\n",
-                    TES3_LTEX_DATA_FILE, strerror(errno));
-            return 1;
+        fprintf(stderr, "Warning: Cannot open your TES3 land textures data (%s) file for reading: %s\n",
+                TES3_LTEX_DATA_FILE, strerror(errno));
+        return 1;
     }
 
     return 0;
@@ -781,3 +780,36 @@ int ReadVTEX3(char *s_vtex, int tex_size, int cx, int cy, int y, int sx, int sy,
     return 0;
 }
 
+int DeStandardizeTES3VTEX(unsigned short int vtex[16][16], unsigned short int ntex[16][16])
+{
+    int i, j, k, l, q;
+    int qx, qy;
+
+    int vtpointer;
+    char *vtpos;
+
+    memset(vtex, 0, 512);
+
+    vtpos = (void *) &vtex[0][0];
+
+    for (q = 0; q < 4; q++) {
+                if (q == 0)      { qx = 0; qy = 0; vtpointer = 0;   }
+                else if (q == 1) { qx = 8; qy = 0; vtpointer = 64;  }
+                else if (q == 2) { qx = 0; qy = 8; vtpointer = 256; }
+                else if (q == 3) { qx = 8; qy = 8; vtpointer = 320; }
+
+        for (i = 0; i < 2; i++) {
+            vtpointer += (i*64);
+            for (j = 0; j < 2; j++) {
+                for (k = 0; k < 4; k++) {
+                    for (l = 0; l < 4; l++) {
+                        memcpy((vtpos + vtpointer), &ntex[qy+k+(4*i)][qx+l+(4*j)], 2);
+                        vtpointer += 2;
+                    }
+                }
+            }
+        }
+    }
+
+    return 0;
+}

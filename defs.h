@@ -64,36 +64,9 @@ struct {
 
 enum { EXTERIOR, INTERIOR, TRUE, FALSE };
 
-struct cell_data {
-        int size;
-        char name[1024];
-        char region_name[1024];
-        int current_x;
-        int current_y;
-        int new_x;
-        int new_y;
-        int type;
-        int save;
-        int copy;
-} cell;
-
-/***************************************************************
-* The rules array is made global, only because it saves sending
-* pointers between the ReadRules and ParseRules functions.
-**************************************************************/
-
-char rule[5][1024];
-
-char log_message[512];
-char input_esp_filename[128];
-
 /***************************
 * Just some running totals.
 **************************/
-
-char *last_cell_data;
-
-#define TMP_CELL_FILENAME               "cell%d.tmp"
 
 struct {
         unsigned short int count;
@@ -102,7 +75,5 @@ struct {
         char filename[2048][64];
         char formid[2048][4];
 } ltex;
-
-char t4layer[9][34][34][3]; // 9 Layers of 34x34 pixels, 3 bytes per pixel.
 
 #endif /* DEFINITIONS_H */

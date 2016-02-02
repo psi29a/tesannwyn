@@ -31,7 +31,6 @@ int ExportTES3Land(char *, int, int, int);
 int Process3LANDData(char *, int, int, int);
 int ReplaceVTEX3Textures(char *);
 int StandardizeTES3VTEX(unsigned short int [16][16], unsigned short int [16][16]);
-int DeStandardizeTES3VTEX(unsigned short int [16][16], unsigned short int [16][16]);
 int WriteLTEXdata(char *);
 
 int GetFormIDFromTEXNum(unsigned short int, char *);
