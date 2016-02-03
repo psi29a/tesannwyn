@@ -21,6 +21,11 @@
 #include "defs.h"
 #include "tes3_export.h"
 
+static int min_x = 32768,
+    max_x = -32768,
+    min_y = 32768,
+    max_y = -32768;
+
 /****************************************************
 ** bytes_to_int():
 **
@@ -294,14 +299,14 @@ int HumptyImage(char *output_filename, int opt_image_type, int bpp, int opt_adju
 
                         height = (int) (((float) (row_sum + (opt_adjust_height/8))) * opt_scale);
 
-                        if (height < height_stat_min) {
-                            height_stat_min = height;
-                            height_stat_min_cell_x = x;
-                            height_stat_min_cell_y = y;
-                        } else if (height > height_stat_max) {
-                            height_stat_max = height;
-                            height_stat_max_cell_x = x;
-                            height_stat_max_cell_y = y;
+                        if (height < height_stat.min) {
+                            height_stat.min = height;
+                            height_stat.cell_min_x = x;
+                            height_stat.cell_min_y = y;
+                        } else if (height > height_stat.max) {
+                            height_stat.max = height;
+                            height_stat.cell_max_x = x;
+                            height_stat.cell_max_y = y;
                         }
 
                         if (opt_grid != -1 && (i == 1 || j == 1)) height = opt_grid;
@@ -382,13 +387,13 @@ int RescaleGreyScale(char *output_filename, int opt_image_type, int bpp, int opt
                                 height = ((float) (row_sum + (opt_adjust_height/8))) * opt_scale;
                                 if (h_high < height) {
                                     h_high = height;
-                                    height_stat_max_cell_x = x;
-                                    height_stat_max_cell_y = y;
+                                    height_stat.cell_max_x = x;
+                                    height_stat.cell_max_y = y;
                                 }
                                 if (h_low  > height) {
                                     h_low = height;
-                                    height_stat_min_cell_x = x;
-                                    height_stat_min_cell_y = y;
+                                    height_stat.cell_min_x = x;
+                                    height_stat.cell_min_y = y;
                                 }
                             }
                         }
@@ -610,7 +615,6 @@ int CleanUp(int cleanup_list_x[], int cleanup_list_y[], int *cleanup_list_count)
 
 int ExportImages(int opt_image_type, int opt_bpp, int opt_vclr, int opt_grid, int opt_vtex, int opt_adjust_height, int opt_rescale, float opt_scale)
 {
-    printf(" GOT HERE TOO\n");
     int i;
     ltex.count = 0;
 
@@ -655,9 +659,9 @@ int ExportImages(int opt_image_type, int opt_bpp, int opt_vclr, int opt_grid, in
     CleanUp(cleanup_list_x, cleanup_list_y, &cleanup_list_count);
 
     printf("\n\nHighest point was %d THU (%d Game Units) = %f metres    [Cell (%d,%d)]\n",
-            height_stat_max, height_stat_max * 8, ((float) height_stat_max * 0.114), height_stat_max_cell_x, height_stat_max_cell_y);
+            height_stat.max, height_stat.max * 8, ((float) height_stat.max * 0.114), height_stat.cell_max_x, height_stat.cell_max_y);
     printf("Lowest  point was %d THU (%d Game Units) = %f metres    [Cell (%d,%d)]\n",
-            height_stat_min, height_stat_min * 8, ((float) height_stat_min * 0.114), height_stat_min_cell_x, height_stat_min_cell_y);
+            height_stat.min, height_stat.min * 8, ((float) height_stat.min * 0.114), height_stat.cell_min_x, height_stat.cell_min_y);
     printf("\nBottom left of image corresponds to cell (%d, %d). This could be useful if you want to re-import.\n", min_x, min_y );
 
     if (opt_image_type == RAW) {

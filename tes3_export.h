@@ -1,20 +1,6 @@
 #ifndef TES3_EXPORT_H
 #define TES3_EXPORT_H
 
-/* TODO: try to remove globals */
-
-static int min_x = 32768,
-    max_x = -32768,
-    min_y = 32768,
-    max_y = -32768;
-
-static int height_stat_min = 1048576,
-    height_stat_max = -1048576, // Record the minimum and maximum heights
-    height_stat_max_cell_x,
-    height_stat_max_cell_y,
-    height_stat_min_cell_x,
-    height_stat_min_cell_y;
-
 int HumptyImage(char *, int, int, int, int, int, float);
 int HumptyVCLR(char *, int);
 int HumptyVTEX3(char *, int);

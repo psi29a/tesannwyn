@@ -41,6 +41,9 @@
 
 #define MAX_LAYERS 9 // The CS only supports up to 9 texture layers in TES4 (Oblivion, Fallout 3 & Skyrim).
 
+#define MAX_HEIGHT 1048576
+#define MIN_HEIGHT -1048576
+
 enum { UNKNOWN, IMPORT, EXPORT };
 enum { UNKNOWN_IMAGE, RAW, BMP, CSV };
 
@@ -61,6 +64,16 @@ struct {
     short unsigned int old_values[1024];
     short unsigned int new_values[1024];
 } vtex3_replace;
+
+// Record the minimum and maximum heights
+struct {
+    int min;
+    int max;
+    int cell_max_x;
+    int cell_max_y;
+    int cell_min_x;
+    int cell_min_y;
+} height_stat;
 
 enum { EXTERIOR, INTERIOR, TRUE, FALSE };
 

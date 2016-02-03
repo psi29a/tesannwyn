@@ -18,7 +18,7 @@
 
 #include "defs.h"
 #include "tes3_import.h"
-#include "tes3_export.h"
+
 
 int ImportImage(char *input_filename, int opt_bpp, int opt_vclr, int opt_sx,
                 int opt_sy, int opt_image_type, int opt_vtex, int opt_rescale,
@@ -27,8 +27,7 @@ int ImportImage(char *input_filename, int opt_bpp, int opt_vclr, int opt_sx,
                 int opt_y_cell_offset, int opt_ignore_land_upper,
                 int opt_ignore_land_lower, char *opt_texture, float opt_scale)
 {
-    int
-        x,
+    int x,
         y,
         cx,
         cy;
@@ -74,18 +73,14 @@ int ImportImage(char *input_filename, int opt_bpp, int opt_vclr, int opt_sx,
         total_overflows = 0,
         total_underflows = 0;
 
-    int height_stat_min = 1048576,
-        height_stat_max = -1048576, // Record the minimum and maximum heights
-        height_stat_max_cell_x,
-        height_stat_max_cell_y,
-        height_stat_min_cell_x,
-        height_stat_min_cell_y;
-
     int cellsize = 0;
 
     int total_records = 0;
 
     Bp = opt_bpp / 8; // (wince at the capital) Bytes per pixel (opt_bpp is bits per pixel!)
+
+    height_stat.max = MAX_HEIGHT;
+    height_stat.min = MIN_HEIGHT;
 
     if (opt_vclr) {
         vclr.sx = opt_sx;
@@ -216,14 +211,14 @@ int ImportImage(char *input_filename, int opt_bpp, int opt_vclr, int opt_sx,
                         if (image[y][x] > opt_upper_limit) image[y][x] = opt_upper_limit;
                     }
 
-                    if (image[y][x] < height_stat_min) {
-                        height_stat_min = image[y][x];
-                        height_stat_min_cell_x = cx + opt_x_cell_offset;
-                        height_stat_min_cell_y = cy + opt_y_cell_offset;
-                    } else if (image[y][x] > height_stat_max) {
-                        height_stat_max = image[y][x];
-                        height_stat_max_cell_x = cx + opt_x_cell_offset;
-                        height_stat_max_cell_y = cy + opt_y_cell_offset;
+                    if (image[y][x] < height_stat.min) {
+                        height_stat.min = image[y][x];
+                        height_stat.cell_min_x = cx + opt_x_cell_offset;
+                        height_stat.cell_min_y = cy + opt_y_cell_offset;
+                    } else if (image[y][x] > height_stat.max) {
+                        height_stat.max = image[y][x];
+                        height_stat.cell_max_x = cx + opt_x_cell_offset;
+                        height_stat.cell_max_y = cy + opt_y_cell_offset;
                     }
                 }
             }
@@ -271,11 +266,11 @@ int ImportImage(char *input_filename, int opt_bpp, int opt_vclr, int opt_sx,
             total_overflows, total_underflows);
     }
     printf("\n\nHighest point is %d THU (%d Game Units) = %f metres  [Cell (%d,%d)]\n",
-        height_stat_max, height_stat_max * 8, ((float) height_stat_max * 0.114),
-        height_stat_max_cell_x, height_stat_max_cell_y);
+        height_stat.max, height_stat.max * 8, ((float) height_stat.max * 0.114),
+        height_stat.cell_max_x, height_stat.cell_max_y);
     printf("Lowest  point is %d THU (%d Game Units) = %f metres  [Cell (%d,%d)]\n",
-        height_stat_min, height_stat_min * 8, ((float) height_stat_min * 0.114),
-        height_stat_min_cell_x, height_stat_min_cell_y);
+        height_stat.min, height_stat.min * 8, ((float) height_stat.min * 0.114),
+        height_stat.cell_min_x, height_stat.cell_min_y);
     printf("\nTotal number of cells imported: %d\n", total_land);
     printf("\nFinished! The imported ESP is called %s and is %d cells by %d cells.\n", TA_ESP_OUT, x_cell_range, y_cell_range);
 
