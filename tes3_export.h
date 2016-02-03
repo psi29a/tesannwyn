@@ -8,9 +8,6 @@ static int min_x = 32768,
     min_y = 32768,
     max_y = -32768;
 
-static int cleanup_list_x[1048576];
-static int cleanup_list_y[1048576];
-static int cleanup_list_count = 0;
 static int height_stat_min = 1048576,
     height_stat_max = -1048576, // Record the minimum and maximum heights
     height_stat_max_cell_x,
@@ -25,13 +22,14 @@ int RescaleGreyScale(char *, int, int, int, float);
 int WriteBMPHeader(FILE *, int, int, int);
 int WriteBMPGreyScaleHeader(FILE *, int, int, int);
 int bytes_to_int(char, char, char, char);
+int CleanUp(int [], int [], int *);
 
 int ExportImages(int, int, int, int, int, int, int, float);
-int ExportTES3Land(char *, int, int, int);
-int Process3LANDData(char *, int, int, int);
+int ExportTES3Land(char *, int, int, int, int [], int [], int *);
+int Process3LANDData(char *, int, int, int, int [], int [], int *);
 int ReplaceVTEX3Textures(char *);
 int StandardizeTES3VTEX(unsigned short int [16][16], unsigned short int [16][16]);
-int WriteLTEXdata(char *);
+int WriteLTEXdata(char *, int [], int [], int *);
 
 int GetFormIDFromTEXNum(unsigned short int, char *);
 int GetFormIDForFilename(char *, char *, char *, char *);

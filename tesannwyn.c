@@ -31,7 +31,12 @@
 #include "tes3_import.h"
 #include "tes3_export.h"
 
-int ShowUsageExit(char *argv0);
+int DecodeDimensions(char *, int *, int *);
+int DecodeFilenames(char *);
+int DecodeOptIgnoreLand(char *, int *, int *);
+int DecodeLimits(char *, int *opt_lower_limit, int *opt_upper_limit);
+int DecodeUserTexture(char *, char *, char *);
+int ShowUsageExit(char *);
 
 int main(int argc, char *argv[])
 {
@@ -290,6 +295,10 @@ int main(int argc, char *argv[])
                 opt_y_cell_offset, opt_ignore_land_upper, opt_ignore_land_lower,
                 opt_texture, opt_scale);
     } else {
+        printf("GOTHERE\n");
+        printf("%d %d %d %d %d %d %d %f\n", opt_image_type, opt_bpp, opt_vclr, opt_grid, opt_vtex,
+               opt_adjust_height, opt_rescale, opt_scale);
+
         ExportImages(opt_image_type, opt_bpp, opt_vclr, opt_grid, opt_vtex,
                      opt_adjust_height, opt_rescale, opt_scale);
     }

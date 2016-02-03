@@ -9,7 +9,7 @@ include(CheckCCompilerFlag)
 include(CheckCSourceCompiles)
 check_c_compiler_flag("-Wall" HAVE_WALL_SWITCH)
 if(HAVE_WALL_SWITCH)
-    add_definitions("-Wall")
+    add_definitions("-Wall -g")
 endif()
 
 find_library(M_LIBRARY m REQUIRED)

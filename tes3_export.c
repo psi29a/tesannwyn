@@ -588,19 +588,20 @@ int HumptyVTEX3(char *output_filename, int layer)
 }
 
 
-int CleanUp(int cleanup_list_x[], int cleanup_list_y[])
+int CleanUp(int cleanup_list_x[], int cleanup_list_y[], int *cleanup_list_count)
 {
     int i;
 
     char filename[128];
 
-    for (i = 0; i < cleanup_list_count; i++) {
+    for (i = 0; i < *cleanup_list_count; i++) {
         sprintf(filename, "%s/land.%d.%d.tmp", TA_TMP_DIR, cleanup_list_x[i], cleanup_list_y[i]);
         unlink(filename);
         sprintf(filename, "%s/vclr.%d.%d.tmp", TA_TMP_DIR, cleanup_list_x[i], cleanup_list_y[i]);
         unlink(filename);
         sprintf(filename, "%s/vtex3.%d.%d.tmp", TA_TMP_DIR, cleanup_list_x[i], cleanup_list_y[i]);
         unlink(filename);
+        printf("filename: %s\n", filename);
     }
 
     rmdir(TA_TMP_DIR);
@@ -610,8 +611,13 @@ int CleanUp(int cleanup_list_x[], int cleanup_list_y[])
 
 int ExportImages(int opt_image_type, int opt_bpp, int opt_vclr, int opt_grid, int opt_vtex, int opt_adjust_height, int opt_rescale, float opt_scale)
 {
+    printf(" GOT HERE TOO\n");
     int i;
     ltex.count = 0;
+
+    int cleanup_list_x[1048576];
+    int cleanup_list_y[1048576];
+    int cleanup_list_count = 0;
 
     mkdir(TA_TMP_DIR, 0777);
 
@@ -623,7 +629,7 @@ int ExportImages(int opt_image_type, int opt_bpp, int opt_vclr, int opt_grid, in
 
     for (i = 0; i < input_files.count; i++) {
         printf("\nRunning TES3 exporter:\n");
-        ExportTES3Land(input_files.filename[i], opt_bpp, opt_vclr, opt_vtex);
+        ExportTES3Land(input_files.filename[i], opt_bpp, opt_vclr, opt_vtex, cleanup_list_x, cleanup_list_y, &cleanup_list_count);
     }
 
     if (opt_vclr) {
@@ -647,7 +653,7 @@ int ExportImages(int opt_image_type, int opt_bpp, int opt_vclr, int opt_grid, in
         HumptyImage(TA_BMP_OUT, opt_image_type, opt_bpp, opt_adjust_height, opt_grid, opt_rescale, opt_scale);
     }
 
-    CleanUp(cleanup_list_x, cleanup_list_y);
+    CleanUp(cleanup_list_x, cleanup_list_y, &cleanup_list_count);
 
     printf("\n\nHighest point was %d THU (%d Game Units) = %f metres    [Cell (%d,%d)]\n",
             height_stat_max, height_stat_max * 8, ((float) height_stat_max * 0.114), height_stat_max_cell_x, height_stat_max_cell_y);
@@ -664,7 +670,7 @@ int ExportImages(int opt_image_type, int opt_bpp, int opt_vclr, int opt_grid, in
     return 0;
 }
 
-int ExportTES3Land(char *input_esp_filename, int opt_bpp, int opt_vclr, int opt_vtex)
+int ExportTES3Land(char *input_esp_filename, int opt_bpp, int opt_vclr, int opt_vtex, int cleanup_list_x[], int cleanup_list_y[], int *cleanup_list_count)
 {
     char s[40];	/* For storing the 16-byte header. */
     FILE *fpin;	/* Input File Stream (original ESP/ESM).      */
@@ -720,7 +726,7 @@ int ExportTES3Land(char *input_esp_filename, int opt_bpp, int opt_vclr, int opt_
          *****************************************************/
         if (strncmp(s, "LAND", 4) == 0) {
             //putchar(s[0]); // TODO: verbose output
-            Process3LANDData(or + 16, size-16, opt_vclr, opt_vtex);
+            Process3LANDData(or + 16, size-16, opt_vclr, opt_vtex, cleanup_list_x, cleanup_list_y, cleanup_list_count);
         }  else if (strncmp(s, "LTEX", 4) == 0) {
             //putchar(s[0]); // TODO: verbose output
             Process3LTEXData(or + 16, size-16);
@@ -738,7 +744,7 @@ int ExportTES3Land(char *input_esp_filename, int opt_bpp, int opt_vclr, int opt_
 
     if (ltex.count > 0) {
         unlink(TA_LTEX3_OUT);
-        WriteLTEXdata(TA_LTEX3_OUT);
+        WriteLTEXdata(TA_LTEX3_OUT, cleanup_list_x, cleanup_list_y, cleanup_list_count);
     }
 
     return 0;
@@ -750,7 +756,7 @@ int ExportTES3Land(char *input_esp_filename, int opt_bpp, int opt_vclr, int opt_
 ** LAND (4 bytes) + Length (4 bytes) + X (4 bytes) + Y (4 bytes).
 ****************************************************************/
 
-int Process3LANDData(char *r, int size, int opt_vclr, int opt_vtex)
+int Process3LANDData(char *r, int size, int opt_vclr, int opt_vtex, int cleanup_list_x[], int cleanup_list_y[], int *cleanup_list_count)
 {
     int pos = 0,
         nsize = 0,
@@ -857,8 +863,8 @@ int Process3LANDData(char *r, int size, int opt_vclr, int opt_vtex)
         if (current_y < min_y) min_y = current_y;
         if (current_y > max_y) max_y = current_y;
 
-        cleanup_list_x[cleanup_list_count] = current_x;
-        cleanup_list_y[cleanup_list_count++] = current_y;
+        cleanup_list_x[*cleanup_list_count] = current_x;
+        cleanup_list_y[(*cleanup_list_count)++] = current_y;
 
     return 0;
 }
@@ -915,7 +921,7 @@ int StandardizeTES3VTEX(unsigned short int vtex[16][16], unsigned short int ntex
 }
 
 
-int WriteLTEXdata(char *filename)
+int WriteLTEXdata(char *filename, int cleanup_list_x[], int cleanup_list_y[], int *cleanup_list_count)
 {
     int i;
 
@@ -926,7 +932,7 @@ int WriteLTEXdata(char *filename)
     if ((fp_lt = fopen(filename, "wb")) == 0) {
         fprintf(stderr, "Unable to create my TES3 LTEX reference file (%s): %s\n",
             filename, strerror(errno));
-        CleanUp(cleanup_list_x, cleanup_list_y);
+        CleanUp(cleanup_list_x, cleanup_list_y, cleanup_list_count);
         exit(1);
     }
 

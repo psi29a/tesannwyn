@@ -70,6 +70,10 @@ int ImportImage(char *input_filename, int opt_bpp, int opt_vclr, int opt_sx,
          *fp_vclr,
          *fp_vtex[9];
 
+    int total_land = 0,
+        total_overflows = 0,
+        total_underflows = 0;
+
     int height_stat_min = 1048576,
         height_stat_max = -1048576, // Record the minimum and maximum heights
         height_stat_max_cell_x,
@@ -82,8 +86,6 @@ int ImportImage(char *input_filename, int opt_bpp, int opt_vclr, int opt_sx,
     int total_records = 0;
 
     Bp = opt_bpp / 8; // (wince at the capital) Bytes per pixel (opt_bpp is bits per pixel!)
-
-    total_land = 0;
 
     if (opt_vclr) {
         vclr.sx = opt_sx;
@@ -241,7 +243,7 @@ int ImportImage(char *input_filename, int opt_bpp, int opt_vclr, int opt_sx,
                 flag_ignore_land = 0;
             } else {
                 WriteTES3CELLRecord(cx + opt_x_cell_offset, cy + opt_y_cell_offset, fp_out);
-                WriteTES3LANDRecord(cx + opt_x_cell_offset, cy + opt_y_cell_offset, opt_adjust_height, (int (*)[]) &image, vclr_image, vtex_image, fp_out, opt_vtex, opt_vclr, &total_overflows, &total_underflows, opt_texture);
+                WriteTES3LANDRecord(cx + opt_x_cell_offset, cy + opt_y_cell_offset, (int (*)[]) &image, vclr_image, vtex_image, fp_out, opt_vtex, opt_vclr, &total_overflows, &total_underflows, &total_land, opt_texture);
             }
         }
     }
@@ -280,24 +282,24 @@ int ImportImage(char *input_filename, int opt_bpp, int opt_vclr, int opt_sx,
     return 0;
 }
 
-int CatchGradientOverflows(int *gradient)
+int CatchGradientOverflows(int *gradient, int *total_overflows, int *total_underflows)
 {
     if (*gradient > 127) {
         //printf("Gradient corrected: %d\n", *gradient);
         *gradient = 127;
-        total_overflows++;
+        (*total_overflows)++;
         return 1;
     } else if (*gradient < -128) {
         //printf("Gradient corrected: %d\n", *gradient);
         *gradient = -128;
-        total_underflows--;
+        (*total_underflows)--;
         return 1;
     }
 
     return 0;
 }
 
-int WriteTES3LANDRecord(int cx, int cy, int opt_adjust_height, int image[66][66], char vclr[66][66][3], short unsigned int vtex3[16][16], FILE *fp_out, int opt_vtex, int opt_vclr, int *total_overflows, int *total_underflows, char *opt_texture)
+int WriteTES3LANDRecord(int cx, int cy, int image[66][66], char vclr[66][66][3], short unsigned int vtex3[16][16], FILE *fp_out, int opt_vtex, int opt_vclr, int *total_overflows, int *total_underflows, int *total_land, char *opt_texture)
 {
     short int tex_num = 0;
     int size = 0;
@@ -317,7 +319,7 @@ int WriteTES3LANDRecord(int cx, int cy, int opt_adjust_height, int image[66][66]
     for (int y = 1; y < 65; y++) {
         for (int x = 1; x < 65; x++) {
             igrad[y][x] = image[y][x] - image[y][x-1];
-            CatchGradientOverflows(&igrad[y][x]);
+            CatchGradientOverflows(&igrad[y][x], total_overflows, total_underflows);
         }
     }
 
@@ -329,7 +331,7 @@ int WriteTES3LANDRecord(int cx, int cy, int opt_adjust_height, int image[66][66]
     // Calculate Row 0.
     for (int x = 1; x < 65 ; x++) {
         igrad[0][x] = image[0][x] - image[0][x-1];
-        CatchGradientOverflows(&igrad[0][x]);
+        CatchGradientOverflows(&igrad[0][x], total_overflows, total_underflows);
     }
 
     for (int y = 0; y < 65; y++) {
@@ -437,7 +439,7 @@ int WriteTES3LANDRecord(int cx, int cy, int opt_adjust_height, int image[66][66]
         fwrite(ntex, 512, 1, fp_out);
     }
 
-    total_land++;
+    (*total_land)++;
 
     return 0;
 }
