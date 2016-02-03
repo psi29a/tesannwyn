@@ -601,7 +601,6 @@ int CleanUp(int cleanup_list_x[], int cleanup_list_y[], int *cleanup_list_count)
         unlink(filename);
         sprintf(filename, "%s/vtex3.%d.%d.tmp", TA_TMP_DIR, cleanup_list_x[i], cleanup_list_y[i]);
         unlink(filename);
-        printf("filename: %s\n", filename);
     }
 
     rmdir(TA_TMP_DIR);
@@ -615,9 +614,9 @@ int ExportImages(int opt_image_type, int opt_bpp, int opt_vclr, int opt_grid, in
     int i;
     ltex.count = 0;
 
-    int cleanup_list_x[1048576];
-    int cleanup_list_y[1048576];
-    int cleanup_list_count = 0;
+    static int cleanup_list_x[1048576];
+    static int cleanup_list_y[1048576];
+    static int cleanup_list_count = 0;
 
     mkdir(TA_TMP_DIR, 0777);
 
