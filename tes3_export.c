@@ -617,6 +617,8 @@ int ExportImages(int opt_image_type, int opt_bpp, int opt_vclr, int opt_grid, in
 {
     int i;
     ltex.count = 0;
+    height_stat.max = MIN_HEIGHT;
+    height_stat.min = MAX_HEIGHT;
 
     static int cleanup_list_x[1048576];
     static int cleanup_list_y[1048576];

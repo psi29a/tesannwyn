@@ -79,8 +79,8 @@ int ImportImage(char *input_filename, int opt_bpp, int opt_vclr, int opt_sx,
 
     Bp = opt_bpp / 8; // (wince at the capital) Bytes per pixel (opt_bpp is bits per pixel!)
 
-    height_stat.max = MAX_HEIGHT;
-    height_stat.min = MIN_HEIGHT;
+    height_stat.max = MIN_HEIGHT;
+    height_stat.min = MAX_HEIGHT;
 
     if (opt_vclr) {
         vclr.sx = opt_sx;
