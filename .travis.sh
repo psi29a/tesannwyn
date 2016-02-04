@@ -13,7 +13,7 @@ if [ "$ANALYZE" = "true" ]; then
             ./*.{h,c} 2> cppcheck.txt
         if [ -s cppcheck.txt ]; then
             cat cppcheck.txt
-            exit 0
+            exit 1
         fi
     fi
 else
