@@ -556,7 +556,10 @@ int StandardizeRAW(char *input_filename, char *output_filename, int *sx, int *sy
     pad_height = 0;
 
     for (i = 0; i < *sy; i++) {
-        fread (s, Bp * (*sx), 1, fp_in);
+        if (!fread(s, Bp * (*sx), 1, fp_in)){
+            fprintf(stderr, "%s\n", strerror(errno));
+            exit(1);
+        }
         fwrite(s, Bp * (*sx), 1, fp_out);
 
         for (j = 0; j < sxx+2; j++) {
