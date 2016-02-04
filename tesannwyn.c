@@ -64,8 +64,7 @@ int main(int argc, char *argv[])
     float opt_scale = 1.0;
 
     char c,
-         s[256],
-         opt_worldspace[128];
+         file_header[256];
 
     char opt_ignore_land_string[64],
          opt_dimensions_string[48],
@@ -80,20 +79,12 @@ int main(int argc, char *argv[])
            "* TESAnnwyn: A RAW/BMP heightmap importer/exporter for TES3/Morrowind. *\n"
            "************************************************************************\n\n");
 
-        /***********************************
-         * Parse the command line arguments.
-         **********************************/
-
+    /***********************************
+     * Parse the command line arguments.
+     **********************************/
     argn = argc;
-
-    while ((c = getopt(argc, argv, "ied:x:y:s:h:p:b:o:w:t:u:Tl:0zcgrvV")) != EOF) {
+    while ((c = getopt(argc, argv, "d:x:y:s:h:p:b:o:t:u:Tl:0zcgrvV")) != EOF) {
         switch (c) {
-            case 'i':
-                opt_mode = IMPORT;
-                break;
-            case 'e':
-                opt_mode = EXPORT;
-                break;
             case 'c':
                 opt_vclr = 1;
                 break;
@@ -111,17 +102,8 @@ int main(int argc, char *argv[])
                         ShowUsageExit(argv[0]);
                 break;
             case 'p':
-                opt_mode = EXPORT;
                 if (optarg) {
                         opt_image_type = atoi(optarg);
-                        argn -= 2;
-                } else
-                        ShowUsageExit(argv[0]);
-                break;
-            case 'w':
-                opt_mode = EXPORT;
-                if (optarg) {
-                        strcpy(opt_worldspace, optarg);
                         argn -= 2;
                 } else
                         ShowUsageExit(argv[0]);
@@ -240,15 +222,20 @@ int main(int argc, char *argv[])
             input_files.filename[0], strerror(errno));
         exit(1);
     }
-    fread(s, 4, 1, fp_in);
-    if (strncmp("TES3", s, 4) == 0) {
+
+    if (!fread(file_header, 4, 1, fp_in)){
+        fprintf(stderr, "%s\n", strerror(errno));
+        exit(1);
+    }
+
+    if (strncmp("TES3", file_header, 4) == 0) {
         printf("Looks like a TES3 file. Assuming want to export this to an image.\n");
         opt_tes_ver = 3;
         opt_mode = EXPORT;
-    } else if (strncmp("TES4", s, 4) == 0) {
+    } else if (strncmp("TES4", file_header, 4) == 0) {
         printf("Looks like a TES4 file. This file isn't supported in this version of Tesannwyn.\n");
         exit(1);
-    } else if (strncmp("BM", s, 2) == 0) {
+    } else if (strncmp("BM", file_header, 2) == 0) {
         printf("This is a BMP. You must want to import this image.\n");
         opt_mode = IMPORT;
         opt_image_type = BMP;
@@ -420,7 +407,6 @@ int ShowUsageExit(char *argv0)
         fprintf(stderr, "Please see the associated Readme document for more detailed help.\n\n"
             "Usage: %s [options] filename\n\n"
             "\tfilename: The image filename you want to import or ESP/ESM to export.\n\n"
-            "\t-i (num or name): Import an image to a create a TES ESP (3 or 4 or 5, or Skyrim, Fallout3, FalloutNV, Oblivion, Morrowind).\n"
             "\t-c: Import/Export the VCLR vertex colour image as a BMP called %s.\n"
             "\t-T (3 or 4): Import/Export a TES3 or TES4 texture placement map a BMP called %s.\n"
             "\t-d (numxnum): X and Y dimensions of import image. e.g. 2688x1344 (default is 1024x1024).\n"

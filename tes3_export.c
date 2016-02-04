@@ -197,7 +197,6 @@ int HumptyImage(char *output_filename, int opt_image_type, int bpp, int opt_adju
     char  h8int = 0;
     short int h16int = 0;
     int   h32int = 0;
-    int   Bp = bpp / 8;
     int   bmp_offset = 0;
     int   xdim, ydim;
 
@@ -228,7 +227,8 @@ int HumptyImage(char *output_filename, int opt_image_type, int bpp, int opt_adju
     } else {
         bmp_offset = 0;
     }
-    Bp = bpp / 8;
+
+    int Bp = bpp / 8;
 
     xdim = ppc*((max_x-min_x)+1);
     ydim = ppc*((max_y-min_y)+1);
@@ -276,7 +276,11 @@ int HumptyImage(char *output_filename, int opt_image_type, int bpp, int opt_adju
                 }
                 continue;
             } else {
-                fread(land_data, 16384, 1, fp_land);
+
+                if (!fread(land_data, 16384, 1, fp_land) && !feof(fp_land)){
+                    fprintf(stderr, "%s\n", strerror(errno));
+                    exit(1);
+                }
 
                 //memcpy(vhgt_data, land_data+3273+6, 1093);
                 memcpy(vhgt_data, land_data, 4229);
@@ -368,7 +372,10 @@ int RescaleGreyScale(char *output_filename, int opt_image_type, int bpp, int opt
 
             sprintf(land_filename, "%s/land.%d.%d.tmp", TA_TMP_DIR, x, y);
             if ((fp_land = fopen(land_filename, "rb")) != 0) {
-                fread(land_data, 16384, 1, fp_land);
+                if (!fread(land_data, 16384, 1, fp_land)){
+                    fprintf(stderr, "%s\n", strerror(errno));
+                    exit(1);
+                }
 
                 memcpy(vhgt_data, land_data, 4229);
 
@@ -465,21 +472,23 @@ int HumptyVCLR(char *output_filename, int opt_grid)
                 /************************************************************
                  * If there's no land file exported, create a seabed instead.
                  ***********************************************************/
-
                 for (c = 1; c < ppc+1; c++) {
-                     fseek(fp_o, 54+ ((y-min_y)*xdim*3*ppc) + ((x-min_x)*3*ppc) + ((c-1)*xdim*3), SEEK_SET);
-                for (i = 1; i < ppc+1; i++) {
-                    rgb = 0xFFFFFFFF;
-                    if (opt_grid != -1) {
-                        if (c == 1 || i == 1) rgb = opt_grid;
+                    fseek(fp_o, 54+ ((y-min_y)*xdim*3*ppc) + ((x-min_x)*3*ppc) + ((c-1)*xdim*3), SEEK_SET);
+                    for (i = 1; i < ppc+1; i++) {
+                        rgb = 0xFFFFFFFF;
+                        if (opt_grid != -1) {
+                            if (c == 1 || i == 1) rgb = opt_grid;
+                        }
+                        fwrite(&rgb, 3, 1, fp_o);
                     }
-                    fwrite(&rgb, 3, 1, fp_o);
-                }
                 }
                 continue;
             } else {
                 memset(&vclr_data, 0, 12675);
-                fread(land_data, 16384, 1, fp_land);
+                if (!fread(land_data, 16384, 1, fp_land)){
+                    fprintf(stderr, "%s\n", strerror(errno));
+                    exit(1);
+                }
 
                 memcpy(vclr_data, land_data, 12675);
 
@@ -576,7 +585,10 @@ int HumptyVTEX3(char *output_filename, int layer)
             } else {
                 memset(&vtex3_data, 0, bsize);
                 fseek(fp_land, bmp_offset, SEEK_SET);
-                fread(vtex3_data, bsize, 1, fp_land);
+                if (!fread(vtex3_data, bsize, 1, fp_land)){
+                    fprintf(stderr, "%s\n", strerror(errno));
+                    exit(1);
+                }
 
                 for (i = 0; i < ppc; i++) {
                     fseek(fp_o, 54 + ((y-min_y)*(xdim*Bp*ppc+(ppc*opad))) + ((x-min_x)*Bp*ppc) + ((i)*xdim*Bp) + (i*opad), SEEK_SET);
@@ -1123,7 +1135,6 @@ int Match34TexturesQuad(int vtex4[34][34], char *vtex_record, int *vtex_size, in
             if (!found && vtex4[y+ys][x+xs] != 0) {
                 memcpy(tex_list.formid[tex_list.count], &vtex4[y+ys][x+xs], 4);
                 tex_list.count++;
-                found = 0;
             }
         }
     }

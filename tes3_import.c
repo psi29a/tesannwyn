@@ -158,11 +158,17 @@ int ImportImage(char *input_filename, int opt_bpp, int opt_vclr, int opt_sx,
             memset(&vclr_image, 0, sizeof(vclr_image));
             for (y = 0; y < cellsize+2; y++) {
                 fseek(fp_in, cx*cellsize*Bp + (cy*(cellsize)*(x_range+(2*Bp))) + (y*(x_range+(2*Bp))), SEEK_SET);
-                fread(s, (cellsize+2)*Bp, 1, fp_in);
+                if (!fread(s, (cellsize+2)*Bp, 1, fp_in)){
+                    fprintf(stderr, "%s\n", strerror(errno));
+                    exit(1);
+                }
 
                 if (opt_vclr) {
                     fseek(fp_vclr, cx*cellsize*vclr.Bp + (cy*(cellsize)*(vclr.x_range+(2*vclr.Bp))) + (y*(vclr.x_range+(2*vclr.Bp))), SEEK_SET);
-                    fread(&s_vclr, (cellsize+2)*vclr.Bp, 1, fp_vclr);
+                    if (!fread(&s_vclr, (cellsize+2)*vclr.Bp, 1, fp_vclr)){
+                        fprintf(stderr, "%s\n", strerror(errno));
+                        exit(1);
+                    }
                 }
 
                 for (x = 0; x < (cellsize+2); x++) {
@@ -597,7 +603,7 @@ int StandardizeBMP2RAW(char *input_filename, char *output_filename, int *sx, int
     FILE *fp_in,
          *fp_out;
 
-    char s[65536];
+    char file_header[65536];
     char pad[4];
 
     int bmp_head_size = 54;
@@ -609,16 +615,22 @@ int StandardizeBMP2RAW(char *input_filename, char *output_filename, int *sx, int
     }
 
     // Gather data from BMP header.
-    fread(s, 54, 1, fp_in);
-    bmp_head_size = s[10] + 256*s[11];
+    if(!fread(file_header, 54, 1, fp_in)){
+        fprintf(stderr, "%s\n", strerror(errno));
+        exit(1);
+    }
+    bmp_head_size = file_header[10] + 256*file_header[11];
 
     fseek(fp_in, 0, SEEK_SET);
 
-    fread(s, bmp_head_size, 1, fp_in);
+    if(!fread(file_header, bmp_head_size, 1, fp_in)){
+        fprintf(stderr, "%s\n", strerror(errno));
+        exit(1);
+    }
 
-    memcpy(sx, s+18, 4);
-    memcpy(sy, s+22, 4);
-    memcpy(Bp, s+28, 1);
+    memcpy(sx, file_header+18, 4);
+    memcpy(sy, file_header+22, 4);
+    memcpy(Bp, file_header+28, 1);
 
     *Bp = *Bp / 8;
 
@@ -659,10 +671,16 @@ int StandardizeBMP2RAW(char *input_filename, char *output_filename, int *sx, int
     if (odd_row > 0) odd_row = 4 - odd_row;
 
     for (i = 0; i < *sy; i++) {
-        fread(s,  *Bp * (*sx), 1, fp_in);
-        fwrite(s, *Bp * (*sx), 1, fp_out);
+        if (!fread(file_header,  *Bp * (*sx), 1, fp_in)){
+            fprintf(stderr, "%s\n", strerror(errno));
+            exit(1);
+        }
+        fwrite(file_header, *Bp * (*sx), 1, fp_out);
 
-        fread(pad, odd_row, 1, fp_in);
+        if (!fread(pad, odd_row, 1, fp_in)){
+            fprintf(stderr, "%s\n", strerror(errno));
+            exit(1);
+        }
 
         for (j = 0; j < sxx+2; j++) {
             fwrite(&pad_height, *Bp, 1, fp_out);
@@ -768,7 +786,10 @@ int ReadVTEX3(char *s_vtex, int tex_size, int cx, int cy, int y, int sx, int sy,
         + ((int) ((float) y / 1.0f) * x_range * Bp)
         ,SEEK_SET);
 
-    fread(s, (int) x_size*Bp, 1, fp_vtex);
+    if (!fread(s, (int) x_size*Bp, 1, fp_vtex)){
+        fprintf(stderr, "%s\n", strerror(errno));
+        exit(1);
+    }
 
     for (int i = 0; i < tex_size; i++) {
         memcpy(s_vtex + (Bp*i), s + (i * Bp), 2);
