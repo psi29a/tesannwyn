@@ -18,9 +18,7 @@ int ReplaceVTEX3Textures(char *);
 int StandardizeTES3VTEX(unsigned short int [16][16], unsigned short int [16][16]);
 int WriteLTEXdata(char *, int [], int [], int *);
 
-int GetFormIDFromTEXNum(unsigned short int, char *);
 int GetFormIDForFilename(char *, char *, char *, char *);
-int ReadLTEX3(char *);
 int StringToReverseFormID(char *, char *);
 int Process3LTEXData(char *, int);
 int FormIDToString(char *, char *);

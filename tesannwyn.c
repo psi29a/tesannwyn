@@ -13,17 +13,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <stdarg.h>
-#include <ctype.h>
 #include <errno.h>
-#include <sys/types.h>
-#include <sys/stat.h>
-#include <fcntl.h>
-#include <math.h>
-#include <time.h>
 
-// Unistd is not usually included on Windows so you may need to comment this out:
-#include <unistd.h>
 #include <getopt.h>
 
 #include "defs.h"
