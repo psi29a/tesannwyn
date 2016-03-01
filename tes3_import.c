@@ -789,7 +789,7 @@ int ReadVTEX3(char *s_vtex, int tex_size, int cx, int cy, int y, int sx, int sy,
         + ((int) ((float) y / 1.0f) * x_range * Bp)
         ,SEEK_SET);
 
-    if (!fread(s, (int) x_size*Bp, 1, fp_vtex)){
+    if (!fread(s, (int) x_size*Bp, 1, fp_vtex) && !feof(fp_vtex)){
         fprintf(stderr, "%s\n", strerror(errno));
         exit(1);
     }
