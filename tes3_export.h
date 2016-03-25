@@ -5,9 +5,9 @@ int HumptyImage(char *, int, int, int, int, int, float);
 
 int HumptyVCLR(char *, int);
 
-int HumptyVTEX3(char *, int);
+int HumptyVTEX3(char *);
 
-int RescaleGreyScale(char *, int, int, int, float);
+int RescaleGreyScale(int, float);
 
 int WriteBMPHeader(FILE *, int, int, int);
 
@@ -33,7 +33,7 @@ int GetFormIDForFilename(char *, char *, char *, char *);
 
 int StringToReverseFormID(char *, char *);
 
-int Process3LTEXData(char *, int);
+int Process3LTEXData(char *);
 
 int FormIDToString(char *, char *);
 

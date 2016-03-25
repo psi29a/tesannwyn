@@ -197,7 +197,7 @@ int ImportImage(char *input_filename, int opt_bpp, int opt_vclr, int opt_sx,
 
             if (opt_vtex) {
                 for (y = 0; y < tex_size; y++) {
-                    ReadVTEX3(s_vtex, tex_size, cx, cy, y, opt_sx, opt_sy, fp_vtex[0]);
+                    ReadVTEX3(s_vtex, tex_size, cx, cy, y, opt_sx, fp_vtex[0]);
                     for (x = 0; x < tex_size; x++) {
                         memcpy(&vtex_image[y][x], s_vtex + (2 * x), 2);
                     }
@@ -504,9 +504,7 @@ int WriteTES3Header(FILE *fp_out) {
             0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x03, 0x06, 0x00, 0x00
     };
 
-    int i;
-
-    for (i = 0; i < sizeof(header_dat); i++) {
+    for (unsigned int i = 0; i < sizeof(header_dat); i++) {
         fputc(header_dat[i], fp_out);
     }
 
@@ -776,7 +774,7 @@ int WriteTES3LTEX(FILE *fp_out, int *total_records) {
     return 0;
 }
 
-int ReadVTEX3(char *s_vtex, int tex_size, int cx, int cy, int y, int sx, int sy, FILE *fp_vtex) {
+int ReadVTEX3(char *s_vtex, int tex_size, int cx, int cy, int y, int sx, FILE *fp_vtex) {
     char s[4096];
 
     int Bp = 2;

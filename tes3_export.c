@@ -336,7 +336,7 @@ int HumptyImage(char *output_filename, int opt_image_type, int bpp, int opt_adju
     return 0;
 }
 
-int RescaleGreyScale(char *output_filename, int opt_image_type, int bpp, int opt_adjust_height, float opt_scale) {
+int RescaleGreyScale(int opt_adjust_height, float opt_scale) {
     int i, j;
     int c;
     int x, y;
@@ -344,7 +344,7 @@ int RescaleGreyScale(char *output_filename, int opt_image_type, int bpp, int opt
     int height = 0;
     int col_offset = 0,
             row_sum = 0;
-    int ppc;    // Points per cell (64 for TES3, 32 for TES4).
+    int ppc = MW_CELLSIZE;    // Points per cell (64 for TES3, 32 for TES4).
 
     char tmp_int[5];
 
@@ -359,8 +359,6 @@ int RescaleGreyScale(char *output_filename, int opt_image_type, int bpp, int opt
 
     int h_low = 65536,
             h_high = -65536;
-
-    ppc = MW_CELLSIZE;
 
     for (y = min_y; y <= max_y; y++) {
         for (x = min_x; x <= max_x; x++) {
@@ -519,7 +517,7 @@ int HumptyVCLR(char *output_filename, int opt_grid) {
     return 0;
 }
 
-int HumptyVTEX3(char *output_filename, int layer) {
+int HumptyVTEX3(char *output_filename) {
     int i, j;
     int x, y;
     int bsize = 0;
@@ -657,7 +655,7 @@ int ExportImages(int opt_image_type, int opt_bpp, int opt_vclr, int opt_grid, in
 
     if (opt_vtex) {
         printf("\n\nGenerating BMP of VTEX placement data: %s ... \n", TA_VTEX3_OUT);
-        HumptyVTEX3(TA_VTEX3_OUT, 1);
+        HumptyVTEX3(TA_VTEX3_OUT);
     }
 
     if (opt_image_type == RAW) {
@@ -666,7 +664,7 @@ int ExportImages(int opt_image_type, int opt_bpp, int opt_vclr, int opt_grid, in
     } else if (opt_image_type == BMP) {
         printf("\n\nGenerating new BMP output file: %s ...\n", TA_BMP_OUT);
         if (opt_rescale) {
-            RescaleGreyScale(TA_BMP_OUT, opt_image_type, opt_bpp, opt_adjust_height, opt_scale);
+            RescaleGreyScale(opt_adjust_height, opt_scale);
         }
         HumptyImage(TA_BMP_OUT, opt_image_type, opt_bpp, opt_adjust_height, opt_grid, opt_rescale, opt_scale);
     }
@@ -712,7 +710,7 @@ int ExportTES3Land(char *input_esp_filename, int opt_vclr, int opt_vtex, int cle
     while (fread(s, 1, 16, fpin) > 0) {
 
         /* Size of current record. */
-        int size = bytes_to_int(s[4], s[5], s[6], s[7]) + 16;
+        unsigned int size = bytes_to_int(s[4], s[5], s[6], s[7]) + 16;
 
         /* Create some memory space to store the full orignal record
          * and an additional copy (nr) which may be modified.
@@ -751,7 +749,7 @@ int ExportTES3Land(char *input_esp_filename, int opt_vclr, int opt_vtex, int cle
                              cleanup_list_count);
         } else if (strncmp(s, "LTEX", 4) == 0) {
             //putchar(s[0]); // TODO: verbose output
-            Process3LTEXData(or + 16, size - 16);
+            Process3LTEXData(or + 16);
         }
 
         /************************************************************
@@ -982,7 +980,7 @@ int WriteLTEXdata(char *filename, int cleanup_list_x[], int cleanup_list_y[], in
     return 0;
 }
 
-int Process3LTEXData(char *r, int size) {
+int Process3LTEXData(char *r) {
     short unsigned int i;
     int pos = 0;
     int nsize;

@@ -10,7 +10,7 @@ int ImportImage(char *, int, int, int,
 
 int CatchGradientOverflows(int *, int *, int *);
 
-int ReadVTEX3(char *, int, int, int, int, int, int, FILE *);
+int ReadVTEX3(char *, int, int, int, int, int, FILE *);
 
 int StandardizeBMP2RAW(char *, char *, int *, int *, int *, int, int, float);
 
