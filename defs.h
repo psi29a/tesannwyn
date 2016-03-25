@@ -17,19 +17,12 @@
 #define TA_ESP_OUT "tesannwyn.esp"
 #define TA_RAW_OUT "tesannwyn.raw"
 #define TA_BMP_OUT "tesannwyn.bmp"
-#define TA_CSV_OUT "tesannwyn.csv"
 #define TA_VCLR_OUT "tesannwyn-vclr.bmp"
 #define TA_VTEX3_OUT "tesannwyn-vtex3.bmp"
 #define TA_VCLR_IN  "tesannwyn-vclr.bmp"
-#define TA_CELL_BMP "tesannwyn-cells.bmp"
-#define TA_CELL_TMP "tesannwyn-cells.tmp"
-#define TA_CELL_IN  "tesannwyn-cells.dat"
 
-#define TA_DEFAULT_EXPORT_WORLDSPACE "TESAnnwyn"
-#define TA_DEFAULT_IMPORT_WORLDSPACE "TESAnnwyn"
 #define TA_TMP_RAW "ta_tmp.raw"
 #define TA_TMP_VCLR_RAW "ta_vclr_tmp.raw"
-#define TA_TMP_BMP "ta_tmp2.raw"
 #define TA_TMP_DIR "annwyn.tmp"
 
 #define TES3_LTEX_DATA_FILE "tes3ltex.txt"
@@ -46,11 +39,6 @@
 
 enum { UNKNOWN, IMPORT, EXPORT };
 enum { UNKNOWN_IMAGE, RAW, BMP, CSV };
-
-struct {
-    char name[256];
-    char fname[256];
-} usertex;
 
 struct {
     int count;
@@ -74,8 +62,6 @@ struct {
     int cell_min_x;
     int cell_min_y;
 } height_stat;
-
-enum { EXTERIOR, INTERIOR, TRUE, FALSE };
 
 /***************************
 * Just some running totals.

@@ -25,18 +25,17 @@ int ImportImage(char *input_filename, int opt_bpp, int opt_vclr, int opt_sx,
                 int opt_adjust_height, int opt_limit, int opt_lower_limit,
                 int opt_upper_limit, int opt_x_cell_offset,
                 int opt_y_cell_offset, int opt_ignore_land_upper,
-                int opt_ignore_land_lower, char *opt_texture, float opt_scale)
-{
+                int opt_ignore_land_lower, char *opt_texture, float opt_scale) {
     int x,
-        y,
-        cx,
-        cy;
+            y,
+            cx,
+            cy;
 
-    int Bp = 2; 	 // Bytes per Pixel (i.e. bpp / 8)!
+    int Bp = 2;     // Bytes per Pixel (i.e. bpp / 8)!
 
     int x_range = 0,
-        x_cell_range = 0,
-        y_cell_range = 0;
+            x_cell_range = 0,
+            y_cell_range = 0;
 
     struct {
         int sx;
@@ -46,17 +45,17 @@ int ImportImage(char *input_filename, int opt_bpp, int opt_vclr, int opt_sx,
     } vclr;
 
     int vclr_sx = 0,
-        vclr_sy = 0;
+            vclr_sy = 0;
 
     int flag_ignore_land = 0;
 
-    char  h8int = 0;
+    char h8int = 0;
     short int h16int = 0;
-    int   h32int = 0;
+    int h32int = 0;
 
     char s[4096],
-         s_vclr[4096],
-         s_vtex[8192];
+            s_vclr[4096],
+            s_vtex[8192];
 
     int image[66][66];
 
@@ -65,13 +64,13 @@ int ImportImage(char *input_filename, int opt_bpp, int opt_vclr, int opt_sx,
     int tex_size = MW_TEXSIZE;
 
     FILE *fp_in,
-         *fp_out,
-         *fp_vclr,
-         *fp_vtex[9];
+            *fp_out,
+            *fp_vclr,
+            *fp_vtex[9];
 
     int total_land = 0,
-        total_overflows = 0,
-        total_underflows = 0;
+            total_overflows = 0,
+            total_underflows = 0;
 
     int cellsize = 0;
 
@@ -89,22 +88,24 @@ int ImportImage(char *input_filename, int opt_bpp, int opt_vclr, int opt_sx,
         vclr_sx = opt_sx;
         vclr_sy = opt_sy;
 
-        StandardizeBMP2RAW(TA_VCLR_IN, TA_TMP_VCLR_RAW, &vclr_sx, &vclr_sy, &vclr.Bp, MW_CELLSIZE, opt_adjust_height, opt_scale);
-        printf("Import VCLR BMP has dimensions %dx%d (%d-bit)\n", vclr_sx, vclr_sy, 8*vclr.Bp);
+        StandardizeBMP2RAW(TA_VCLR_IN, TA_TMP_VCLR_RAW, &vclr_sx, &vclr_sy, &vclr.Bp, MW_CELLSIZE, opt_adjust_height,
+                           opt_scale);
+        printf("Import VCLR BMP has dimensions %dx%d (%d-bit)\n", vclr_sx, vclr_sy, 8 * vclr.Bp);
     }
 
     if (opt_image_type == RAW) {
         StandardizeRAW(input_filename, TA_TMP_RAW, &opt_sx, &opt_sy, Bp, MW_CELLSIZE, opt_adjust_height, opt_scale);
     } else {
-        StandardizeBMP2RAW(input_filename, TA_TMP_RAW, &opt_sx, &opt_sy, &Bp, MW_CELLSIZE, opt_adjust_height, opt_scale);
-        printf("Imported BMP has dimensions %dx%d (%d-bit)\n", opt_sx, opt_sy, Bp*8);
+        StandardizeBMP2RAW(input_filename, TA_TMP_RAW, &opt_sx, &opt_sy, &Bp, MW_CELLSIZE, opt_adjust_height,
+                           opt_scale);
+        printf("Imported BMP has dimensions %dx%d (%d-bit)\n", opt_sx, opt_sy, Bp * 8);
     }
 
-    printf("Reading file: %s (dimensions %dx%d, bit-rate %d)\n", input_filename, opt_sx, opt_sy, Bp*8);
+    printf("Reading file: %s (dimensions %dx%d, bit-rate %d)\n", input_filename, opt_sx, opt_sy, Bp * 8);
 
     if ((fp_out = fopen(TA_ESP_OUT, "wb")) == 0) {
         fprintf(stderr, "Unable to open %s for writing: %s\n",
-            TA_ESP_OUT, strerror(errno));
+                TA_ESP_OUT, strerror(errno));
         exit(1);
     }
 
@@ -120,23 +121,24 @@ int ImportImage(char *input_filename, int opt_bpp, int opt_vclr, int opt_sx,
 
     if ((fp_in = fopen(TA_TMP_RAW, "rb")) == NULL) {
         fprintf(stderr, "Unable to open the temporary RAW file I just created (%s) for reading!: %s\n",
-            input_filename, strerror(errno));
+                input_filename, strerror(errno));
         exit(1);
     }
 
     if (opt_vclr) {
         if ((fp_vclr = fopen(TA_TMP_VCLR_RAW, "rb")) == NULL) {
             fprintf(stderr, "You specified that you wanted to import a VCLR image with this "
-                "heightmap, but I cannot find the RAW version I just created! It should be called: %s: %s\n",
-                TA_TMP_VCLR_RAW, strerror(errno));
+                    "heightmap, but I cannot find the RAW version I just created! It should be called: %s: %s\n",
+                    TA_TMP_VCLR_RAW, strerror(errno));
             exit(1);
         }
     }
 
     if (opt_vtex == 3) {
         if ((fp_vtex[0] = fopen(TA_VTEX3_OUT, "rb")) == NULL) {
-            fprintf(stderr, "You specified that you wanted to import a VTEX3 image with this heightmap, but I cannot find it - it should be called: %s - but %s\n",
-                TA_VTEX3_OUT, strerror(errno));
+            fprintf(stderr,
+                    "You specified that you wanted to import a VTEX3 image with this heightmap, but I cannot find it - it should be called: %s - but %s\n",
+                    TA_VTEX3_OUT, strerror(errno));
             exit(1);
         }
     }
@@ -145,7 +147,7 @@ int ImportImage(char *input_filename, int opt_bpp, int opt_vclr, int opt_sx,
 
     // A loop to cycle through all the files, copying one row at a time.
 
-    x_range = (opt_sx)* Bp;
+    x_range = (opt_sx) * Bp;
     vclr.x_range = (vclr_sx) * vclr.Bp;
 
     cellsize = MW_CELLSIZE;
@@ -156,58 +158,60 @@ int ImportImage(char *input_filename, int opt_bpp, int opt_vclr, int opt_sx,
         for (cx = 0; cx < x_cell_range; cx++) {
             memset(&image, 0, sizeof(image));
             memset(&vclr_image, 0, sizeof(vclr_image));
-            for (y = 0; y < cellsize+2; y++) {
-                fseek(fp_in, cx*cellsize*Bp + (cy*(cellsize)*(x_range+(2*Bp))) + (y*(x_range+(2*Bp))), SEEK_SET);
-                if (!fread(s, (cellsize+2)*Bp, 1, fp_in)){
+            for (y = 0; y < cellsize + 2; y++) {
+                fseek(fp_in, cx * cellsize * Bp + (cy * (cellsize) * (x_range + (2 * Bp))) + (y * (x_range + (2 * Bp))),
+                      SEEK_SET);
+                if (!fread(s, (cellsize + 2) * Bp, 1, fp_in)) {
                     fprintf(stderr, "%s\n", strerror(errno));
                     exit(1);
                 }
 
                 if (opt_vclr) {
-                    fseek(fp_vclr, cx*cellsize*vclr.Bp + (cy*(cellsize)*(vclr.x_range+(2*vclr.Bp))) + (y*(vclr.x_range+(2*vclr.Bp))), SEEK_SET);
-                    if (!fread(&s_vclr, (cellsize+2)*vclr.Bp, 1, fp_vclr)){
+                    fseek(fp_vclr, cx * cellsize * vclr.Bp + (cy * (cellsize) * (vclr.x_range + (2 * vclr.Bp))) +
+                                   (y * (vclr.x_range + (2 * vclr.Bp))), SEEK_SET);
+                    if (!fread(&s_vclr, (cellsize + 2) * vclr.Bp, 1, fp_vclr)) {
                         fprintf(stderr, "%s\n", strerror(errno));
                         exit(1);
                     }
                 }
 
-                for (x = 0; x < (cellsize+2); x++) {
+                for (x = 0; x < (cellsize + 2); x++) {
                     image[y][x] = 0;
                     if (Bp == 1) {
-                        memcpy(&h8int, s+(Bp*x), Bp);
+                        memcpy(&h8int, s + (Bp * x), Bp);
                         image[y][x] = (unsigned char) h8int;
                     } else if (Bp == 2) {
-                        memcpy(&h16int, s+(Bp*x), Bp);
+                        memcpy(&h16int, s + (Bp * x), Bp);
                         image[y][x] = h16int;
                     } else if (Bp == 4) {
-                        memcpy(&h32int, s+(Bp*x), Bp);
+                        memcpy(&h32int, s + (Bp * x), Bp);
                         image[y][x] = h32int;
                     }
 
                     if (opt_vclr) {
-                        memcpy(&vclr_image[y][x][0], s_vclr + (3*x), 3);
+                        memcpy(&vclr_image[y][x][0], s_vclr + (3 * x), 3);
 
                     }
                 }
             }
 
-            if (opt_vtex){
+            if (opt_vtex) {
                 for (y = 0; y < tex_size; y++) {
                     ReadVTEX3(s_vtex, tex_size, cx, cy, y, opt_sx, opt_sy, fp_vtex[0]);
                     for (x = 0; x < tex_size; x++) {
-                        memcpy(&vtex_image[y][x], s_vtex + (2*x), 2);
+                        memcpy(&vtex_image[y][x], s_vtex + (2 * x), 2);
                     }
                 }
             }
 
-            for (x = 0; x < cellsize+2; x++) {
-                for (y = 0; y < cellsize+2; y++) {
+            for (x = 0; x < cellsize + 2; x++) {
+                for (y = 0; y < cellsize + 2; y++) {
 
                     image[y][x] = (int) (((float) image[y][x] * (float) opt_scale) + (float) opt_adjust_height / 8.0f);
 
                     if (opt_rescale) {
-                        if (image[y][x] >= 2500)  {
-                            image[y][x] *= 1.0 - (float) ((0.32 * (float) (8*image[y][x] - 20000)) / 28000);
+                        if (image[y][x] >= 2500) {
+                            image[y][x] *= 1.0 - (float) ((0.32 * (float) (8 * image[y][x] - 20000)) / 28000);
                         }
                     }
 
@@ -231,10 +235,10 @@ int ImportImage(char *input_filename, int opt_bpp, int opt_vclr, int opt_sx,
 
             if (opt_ignore_land_upper || opt_ignore_land_lower) {
                 flag_ignore_land = 1;
-                for (x = 0; x < cellsize+1; x++) {
-                    for (y = 0; y < cellsize+1; y++) {
-                        if (image[x][y] < opt_ignore_land_lower/8 ||
-                            image[x][y] > opt_ignore_land_upper/8) {
+                for (x = 0; x < cellsize + 1; x++) {
+                    for (y = 0; y < cellsize + 1; y++) {
+                        if (image[x][y] < opt_ignore_land_lower / 8 ||
+                            image[x][y] > opt_ignore_land_upper / 8) {
                             flag_ignore_land = 0;
                         }
                     }
@@ -244,7 +248,9 @@ int ImportImage(char *input_filename, int opt_bpp, int opt_vclr, int opt_sx,
                 flag_ignore_land = 0;
             } else {
                 WriteTES3CELLRecord(cx + opt_x_cell_offset, cy + opt_y_cell_offset, fp_out);
-                WriteTES3LANDRecord(cx + opt_x_cell_offset, cy + opt_y_cell_offset, (int (*)[]) &image, vclr_image, vtex_image, fp_out, opt_vtex, opt_vclr, &total_overflows, &total_underflows, &total_land, opt_texture);
+                WriteTES3LANDRecord(cx + opt_x_cell_offset, cy + opt_y_cell_offset, (int (*)[]) &image, vclr_image,
+                                    vtex_image, fp_out, opt_vtex, opt_vclr, &total_overflows, &total_underflows,
+                                    &total_land, opt_texture);
             }
         }
     }
@@ -267,24 +273,24 @@ int ImportImage(char *input_filename, int opt_bpp, int opt_vclr, int opt_sx,
 
     if (total_overflows > 0 || total_underflows > 0) {
         printf("\n\nSome gradient overflows/underflows have been caught and blocked:\n"
-            "Total Overflows:  %d\n"
-            "Total Underflows: %d\n",
-            total_overflows, total_underflows);
+                       "Total Overflows:  %d\n"
+                       "Total Underflows: %d\n",
+               total_overflows, total_underflows);
     }
     printf("\n\nHighest point is %d THU (%d Game Units) = %f metres  [Cell (%d,%d)]\n",
-        height_stat.max, height_stat.max * 8, ((float) height_stat.max * 0.114),
-        height_stat.cell_max_x, height_stat.cell_max_y);
+           height_stat.max, height_stat.max * 8, ((float) height_stat.max * 0.114),
+           height_stat.cell_max_x, height_stat.cell_max_y);
     printf("Lowest  point is %d THU (%d Game Units) = %f metres  [Cell (%d,%d)]\n",
-        height_stat.min, height_stat.min * 8, ((float) height_stat.min * 0.114),
-        height_stat.cell_min_x, height_stat.cell_min_y);
+           height_stat.min, height_stat.min * 8, ((float) height_stat.min * 0.114),
+           height_stat.cell_min_x, height_stat.cell_min_y);
     printf("\nTotal number of cells imported: %d\n", total_land);
-    printf("\nFinished! The imported ESP is called %s and is %d cells by %d cells.\n", TA_ESP_OUT, x_cell_range, y_cell_range);
+    printf("\nFinished! The imported ESP is called %s and is %d cells by %d cells.\n", TA_ESP_OUT, x_cell_range,
+           y_cell_range);
 
     return 0;
 }
 
-int CatchGradientOverflows(int *gradient, int *total_overflows, int *total_underflows)
-{
+int CatchGradientOverflows(int *gradient, int *total_overflows, int *total_underflows) {
     if (*gradient > 127) {
         //printf("Gradient corrected: %d\n", *gradient);
         *gradient = 127;
@@ -300,16 +306,18 @@ int CatchGradientOverflows(int *gradient, int *total_overflows, int *total_under
     return 0;
 }
 
-int WriteTES3LANDRecord(int cx, int cy, int image[66][66], char vclr[66][66][3], short unsigned int vtex3[16][16], FILE *fp_out, int opt_vtex, int opt_vclr, int *total_overflows, int *total_underflows, int *total_land, char *opt_texture)
-{
+int WriteTES3LANDRecord(int cx, int cy, int image[66][66], char vclr[66][66][3], short unsigned int vtex3[16][16],
+                        FILE *fp_out, int opt_vtex, int opt_vclr, int *total_overflows, int *total_underflows,
+                        int *total_land, char *opt_texture) {
     short int tex_num = 0;
     int size = 0;
 
     float height_offset;
     float v1[3],
-          v2[3],
-          normal[3],
-          hyp;
+            v2[3],
+            normal[3];
+
+    double hyp;
 
     int igrad[65][65]; // An integer version of the gradients, useful for identifying over/underflows.
     char grad[65][65]; // 8-bit gradients, as required in the ESP format.
@@ -319,19 +327,19 @@ int WriteTES3LANDRecord(int cx, int cy, int image[66][66], char vclr[66][66][3],
 
     for (int y = 1; y < 65; y++) {
         for (int x = 1; x < 65; x++) {
-            igrad[y][x] = image[y][x] - image[y][x-1];
+            igrad[y][x] = image[y][x] - image[y][x - 1];
             CatchGradientOverflows(&igrad[y][x], total_overflows, total_underflows);
         }
     }
 
     // Calculate Column 0.
-    for (int y = 1; y < 65 ; y++) {
-        igrad[y][0] = image[y][0] - image[y-1][0];
+    for (int y = 1; y < 65; y++) {
+        igrad[y][0] = image[y][0] - image[y - 1][0];
     }
 
     // Calculate Row 0.
-    for (int x = 1; x < 65 ; x++) {
-        igrad[0][x] = image[0][x] - image[0][x-1];
+    for (int x = 1; x < 65; x++) {
+        igrad[0][x] = image[0][x] - image[0][x - 1];
         CatchGradientOverflows(&igrad[0][x], total_overflows, total_underflows);
     }
 
@@ -372,26 +380,28 @@ int WriteTES3LANDRecord(int cx, int cy, int image[66][66], char vclr[66][66][3],
 
     for (int y = 0; y < 65; y++) {
         for (int x = 0; x < 65; x++) {
-            v1[0] = 16; 	// = 128/8
+            v1[0] = 16;    // = 128/8
             v1[1] = 0;
-            v1[2] = image[y][x+1] - image[y][x];
+            v1[2] = image[y][x + 1] - image[y][x];
 
             v2[0] = 0;
             v2[1] = 16;
-            v2[2] = image[y+1][x] - image[y][x];
+            v2[2] = image[y + 1][x] - image[y][x];
 
-            normal[0] = v1[1]*v2[2] - v1[2]*v2[1];
-            normal[1] = v1[2]*v2[0] - v1[0]*v2[2];
-            normal[2] = v1[0]*v2[1] - v1[1]*v2[0];
+            normal[0] = v1[1] * v2[2] - v1[2] * v2[1];
+            normal[1] = v1[2] * v2[0] - v1[0] * v2[2];
+            normal[2] = v1[0] * v2[1] - v1[1] * v2[0];
 
-            hyp = sqrt(normal[0]*normal[0] + normal[1]*normal[1] + normal[2]*normal[2]) / 127.0f;
+            hyp = sqrt(normal[0] * normal[0] + normal[1] * normal[1] + normal[2] * normal[2]) / 127.0f;
 
-            normal[0] /= hyp; normal[1] /= hyp; normal[2] /= hyp;
+            normal[0] /= hyp;
+            normal[1] /= hyp;
+            normal[2] /= hyp;
 
             fprintf(fp_out, "%c%c%c",
-                (unsigned char) normal[0],
-                (unsigned char) normal[1],
-                (unsigned char) normal[2]);
+                    (unsigned char) normal[0],
+                    (unsigned char) normal[1],
+                    (unsigned char) normal[2]);
         }
     }
 
@@ -445,8 +455,7 @@ int WriteTES3LANDRecord(int cx, int cy, int image[66][66], char vclr[66][66][3],
     return 0;
 }
 
-int WriteTES3CELLRecord(int cx, int cy, FILE *fp_out)
-{
+int WriteTES3CELLRecord(int cx, int cy, FILE *fp_out) {
     int i;
 
     fprintf(fp_out, "CELL%c%c%c%c", 29, 0, 0, 0);
@@ -466,70 +475,69 @@ int WriteTES3CELLRecord(int cx, int cy, FILE *fp_out)
 }
 
 
-int WriteTES3Header(FILE *fp_out)
-{
-        char header_dat[324] = {
-                0x54, 0x45, 0x53, 0x33, 0x34, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-        0x00, 0x00, 0x00, 0x48, 0x45, 0x44, 0x52, 0x2C, 0x01, 0x00, 0x00, 0x66, 0x66,
-        0xA6, 0x3F, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-        0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-        0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-        0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-        0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-        0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-        0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-        0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-        0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-        0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-        0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-        0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-        0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-        0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-        0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-        0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-        0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-        0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-        0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-        0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-        0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-        0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-        0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x03, 0x06, 0x00, 0x00
-        };
+int WriteTES3Header(FILE *fp_out) {
+    char header_dat[324] = {
+            0x54, 0x45, 0x53, 0x33, 0x34, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+            0x00, 0x00, 0x00, 0x48, 0x45, 0x44, 0x52, 0x2C, 0x01, 0x00, 0x00, 0x66, 0x66,
+            0xA6, 0x3F, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+            0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+            0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+            0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+            0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+            0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+            0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+            0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+            0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+            0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+            0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+            0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+            0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+            0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+            0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+            0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+            0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+            0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+            0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+            0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+            0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+            0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+            0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x03, 0x06, 0x00, 0x00
+    };
 
-        int i;
+    int i;
 
-        for (i = 0; i < sizeof(header_dat); i++) {
-                fputc(header_dat[i], fp_out);
-        }
+    for (i = 0; i < sizeof(header_dat); i++) {
+        fputc(header_dat[i], fp_out);
+    }
 
-        return 0;
+    return 0;
 
 }
 
-int StandardizeRAW(char *input_filename, char *output_filename, int *sx, int *sy, int Bp, int std, int opt_adjust_height, float opt_scale)
-{
+int StandardizeRAW(char *input_filename, char *output_filename, int *sx, int *sy, int Bp, int std,
+                   int opt_adjust_height, float opt_scale) {
     int i, j;
     int sxx = 0, syx = 0;
     int pad_height = -256,
-        pdh32 = -256;
+            pdh32 = -256;
     short int pdh16 = -256;
     char pdh8 = 0;
 
     FILE *fp_in,
-         *fp_out;
+            *fp_out;
 
     char s[65536];
 
-    printf("Standardizing RAW file to %dx%d (%d-bit)\n", *sx, *sy, Bp*8);
+    printf("Standardizing RAW file to %dx%d (%d-bit)\n", *sx, *sy, Bp * 8);
 
     if ((fp_in = fopen(input_filename, "rb")) == NULL) {
         fprintf(stderr, "Unable to open input file (%s) for reading: %s\n",
-            input_filename, strerror(errno));
+                input_filename, strerror(errno));
         exit(1);
     }
     if ((fp_out = fopen(output_filename, "wb")) == NULL) {
         fprintf(stderr, "Unable to open input file (%s) for reading: %s\n",
-            output_filename, strerror(errno));
+                output_filename, strerror(errno));
         exit(1);
     }
 
@@ -556,22 +564,22 @@ int StandardizeRAW(char *input_filename, char *output_filename, int *sx, int *sy
     pad_height = 0;
 
     for (i = 0; i < *sy; i++) {
-        if (!fread(s, Bp * (*sx), 1, fp_in)){
+        if (!fread(s, Bp * (*sx), 1, fp_in)) {
             fprintf(stderr, "%s\n", strerror(errno));
             exit(1);
         }
         fwrite(s, Bp * (*sx), 1, fp_out);
 
-        for (j = 0; j < sxx+2; j++) {
+        for (j = 0; j < sxx + 2; j++) {
             fwrite(&pad_height, Bp, 1, fp_out);
         }
     }
 
     // Double up data in first row (including the first column twice).
 
-    for (i = 0; i < syx+2; i++) {
+    for (i = 0; i < syx + 2; i++) {
         fwrite(&pad_height, Bp, 1, fp_out);
-        for (j = 0; j < (*sx+sxx+2); j++) {
+        for (j = 0; j < (*sx + sxx + 2); j++) {
             fwrite(&pad_height, Bp, 1, fp_out);
         }
     }
@@ -581,7 +589,7 @@ int StandardizeRAW(char *input_filename, char *output_filename, int *sx, int *sy
 
     if (sxx > 0 || syx > 0) {
         printf("RAW file data has been padded from %dx%d to %dx%d (%d-bit) for importing.\n",
-            *sx - sxx, *sy -syx, *sx, *sy, Bp*8);
+               *sx - sxx, *sy - syx, *sx, *sy, Bp * 8);
     }
 
     fclose(fp_out);
@@ -592,19 +600,19 @@ int StandardizeRAW(char *input_filename, char *output_filename, int *sx, int *sy
 
 // Turn a BMP file in to a 32-bit RAW file of the same dimensions.
 
-int StandardizeBMP2RAW(char *input_filename, char *output_filename, int *sx, int *sy, int *Bp, int std, int opt_adjust_height, float opt_scale)
-{
+int StandardizeBMP2RAW(char *input_filename, char *output_filename, int *sx, int *sy, int *Bp, int std,
+                       int opt_adjust_height, float opt_scale) {
     int i, j;
 
     int sxx = 0, syx = 0;
     int pad_height = -256,
-        pdh32 = -256;
+            pdh32 = -256;
     short int pdh16 = -256;
     char pdh8 = 0;
     int odd_row = 0;
 
     FILE *fp_in,
-         *fp_out;
+            *fp_out;
 
     char file_header[65536];
     char pad[4];
@@ -613,27 +621,27 @@ int StandardizeBMP2RAW(char *input_filename, char *output_filename, int *sx, int
 
     if ((fp_in = fopen(input_filename, "rb")) == NULL) {
         fprintf(stderr, "Unable to open input file (%s) for reading: %s\n",
-            input_filename, strerror(errno));
+                input_filename, strerror(errno));
         exit(1);
     }
 
     // Gather data from BMP header.
-    if(!fread(file_header, 54, 1, fp_in)){
+    if (!fread(file_header, 54, 1, fp_in)) {
         fprintf(stderr, "%s\n", strerror(errno));
         exit(1);
     }
-    bmp_head_size = file_header[10] + 256*file_header[11];
+    bmp_head_size = file_header[10] + 256 * file_header[11];
 
     fseek(fp_in, 0, SEEK_SET);
 
-    if(!fread(file_header, bmp_head_size, 1, fp_in)){
+    if (!fread(file_header, bmp_head_size, 1, fp_in)) {
         fprintf(stderr, "%s\n", strerror(errno));
         exit(1);
     }
 
-    memcpy(sx, file_header+18, 4);
-    memcpy(sy, file_header+22, 4);
-    memcpy(Bp, file_header+28, 1);
+    memcpy(sx, file_header + 18, 4);
+    memcpy(sy, file_header + 22, 4);
+    memcpy(Bp, file_header + 28, 1);
 
     *Bp = *Bp / 8;
 
@@ -654,7 +662,7 @@ int StandardizeBMP2RAW(char *input_filename, char *output_filename, int *sx, int
 
     if ((fp_out = fopen(output_filename, "wb")) == NULL) {
         fprintf(stderr, "Unable to open input file (%s) for reading: %s\n",
-            output_filename, strerror(errno));
+                output_filename, strerror(errno));
         exit(1);
     }
     fseek(fp_in, bmp_head_size, SEEK_SET);
@@ -670,31 +678,31 @@ int StandardizeBMP2RAW(char *input_filename, char *output_filename, int *sx, int
 
     // If the row numbers are odd here, this BMP has already been padded out.
 
-    odd_row =  (*sx* *Bp) - (4 * (int) (*sx * *Bp/ 4));
+    odd_row = (*sx * *Bp) - (4 * (int) (*sx * *Bp / 4));
     if (odd_row > 0) odd_row = 4 - odd_row;
 
     for (i = 0; i < *sy; i++) {
-        if (!fread(file_header,  *Bp * (*sx), 1, fp_in)){
+        if (!fread(file_header, *Bp * (*sx), 1, fp_in)) {
             fprintf(stderr, "%s\n", strerror(errno));
             exit(1);
         }
         fwrite(file_header, *Bp * (*sx), 1, fp_out);
 
-        if (!fread(pad, odd_row, 1, fp_in)){
+        if (!fread(pad, odd_row, 1, fp_in)) {
             fprintf(stderr, "%s\n", strerror(errno));
             exit(1);
         }
 
-        for (j = 0; j < sxx+2; j++) {
+        for (j = 0; j < sxx + 2; j++) {
             fwrite(&pad_height, *Bp, 1, fp_out);
         }
     }
 
     // Double up data in first row (including the first column twice).
 
-    for (i = 0; i < syx+2; i++) {
+    for (i = 0; i < syx + 2; i++) {
         fwrite(&pad_height, *Bp, 1, fp_out);
-        for (j = 0; j < (*sx+sxx+2); j++) {
+        for (j = 0; j < (*sx + sxx + 2); j++) {
             fwrite(&pad_height, *Bp, 1, fp_out);
         }
     }
@@ -704,7 +712,7 @@ int StandardizeBMP2RAW(char *input_filename, char *output_filename, int *sx, int
 
     if (sxx > 0 || syx > 0) {
         printf("BMP has been padded from %dx%d to %dx%d (%d-bit) for importing.\n",
-            *sx - sxx, *sy -syx, *sx, *sy, *Bp*8);
+               *sx - sxx, *sy - syx, *sx, *sy, *Bp * 8);
     }
 
     fclose(fp_out);
@@ -713,21 +721,20 @@ int StandardizeBMP2RAW(char *input_filename, char *output_filename, int *sx, int
     return 0;
 }
 
-int WriteTES3LTEX(FILE *fp_out, int *total_records)
-{
+int WriteTES3LTEX(FILE *fp_out, int *total_records) {
     char s[1024];
     FILE *fp_lt;
 
     if ((fp_lt = fopen(TES3_LTEX_DATA_FILE, "rb")) != 0) {
         while (fgets(s, 1024, fp_lt) != NULL) {
             int i = 0,
-                p = 0,
-                index = 0,
-                i1, i2;
+                    p = 0,
+                    index = 0,
+                    i1, i2;
 
             char lname[128],
-                 tname[128],
-                 iname[128];
+                    tname[128],
+                    iname[128];
 
             if (s[0] == '#') continue; // Ignore lines beginning with #
             //sscanf(s, "%d,%s,%s\n", &index, lname, tname);
@@ -735,27 +742,28 @@ int WriteTES3LTEX(FILE *fp_out, int *total_records)
             for (i = 0; s[i] != ',' && s[i] != '\0'; iname[i] = s[i], i++);
             iname[i] = '\0';
 
-            p = i+1;
-            for (i = 0; s[i+p] != ',' && s[i+p] != '\0'; lname[i] = s[i+p], i++);
+            p = i + 1;
+            for (i = 0; s[i + p] != ',' && s[i + p] != '\0'; lname[i] = s[i + p], i++);
             lname[i] = '\0';
 
-            p += i+1;
-            for (i = 0; s[i+p] != ',' && s[i+p] != '\0' && s[i+p] != '\n' && s[i+p] != '\r'; tname[i] = s[i+p], i++);
+            p += i + 1;
+            for (i = 0;
+                 s[i + p] != ',' && s[i + p] != '\0' && s[i + p] != '\n' && s[i + p] != '\r'; tname[i] = s[i + p], i++);
             tname[i] = '\0';
 
             index = atoi(iname);
 
             i2 = (int) index / 256;
-            i1 = (int) index - (256*i2);
+            i1 = (int) index - (256 * i2);
 
             fprintf(fp_out, "LTEX%c%c%c%c", 30 + (int) strlen(lname) + (int) strlen(tname), 0, 0, 0);
             for (i = 0; i < 8; i++) {
                 fputc(0, fp_out);
             }
 
-            fprintf(fp_out, "NAME%c%c%c%c%s%c", (int) strlen(lname)+1, 0, 0, 0, lname, 0);
-            fprintf(fp_out, "INTV%c%c%c%c%c%c%c%c", 4, 0, 0, 0, i1, i2 , 0, 0);
-            fprintf(fp_out, "DATA%c%c%c%c%s%c", (int) strlen(tname)+1, 0, 0, 0, tname, 0);
+            fprintf(fp_out, "NAME%c%c%c%c%s%c", (int) strlen(lname) + 1, 0, 0, 0, lname, 0);
+            fprintf(fp_out, "INTV%c%c%c%c%c%c%c%c", 4, 0, 0, 0, i1, i2, 0, 0);
+            fprintf(fp_out, "DATA%c%c%c%c%s%c", (int) strlen(tname) + 1, 0, 0, 0, tname, 0);
             total_records++;
         }
         fclose(fp_lt);
@@ -768,11 +776,10 @@ int WriteTES3LTEX(FILE *fp_out, int *total_records)
     return 0;
 }
 
-int ReadVTEX3(char *s_vtex, int tex_size, int cx, int cy, int y, int sx, int sy, FILE *fp_vtex)
-{
+int ReadVTEX3(char *s_vtex, int tex_size, int cx, int cy, int y, int sx, int sy, FILE *fp_vtex) {
     char s[4096];
 
-    int  Bp = 2;
+    int Bp = 2;
 
     int x_range;
     int x_size;
@@ -784,25 +791,23 @@ int ReadVTEX3(char *s_vtex, int tex_size, int cx, int cy, int y, int sx, int sy,
     x_range = sx / 4; // 672 across
 
     fseek(fp_vtex, 54 +
-        (((int) ((float) cx * x_size))*Bp)
-        + ((int) ((float) cy / 1.0f) * x_range * y_size * Bp)
-        + ((int) ((float) y / 1.0f) * x_range * Bp)
-        ,SEEK_SET);
+                   (((int) ((float) cx * x_size)) * Bp)
+                   + ((int) ((float) cy / 1.0f) * x_range * y_size * Bp)
+                   + ((int) ((float) y / 1.0f) * x_range * Bp), SEEK_SET);
 
-    if (!fread(s, (int) x_size*Bp, 1, fp_vtex) && !feof(fp_vtex)){
+    if (!fread(s, (int) x_size * Bp, 1, fp_vtex) && !feof(fp_vtex)) {
         fprintf(stderr, "%s\n", strerror(errno));
         exit(1);
     }
 
     for (int i = 0; i < tex_size; i++) {
-        memcpy(s_vtex + (Bp*i), s + (i * Bp), 2);
+        memcpy(s_vtex + (Bp * i), s + (i * Bp), 2);
     }
 
     return 0;
 }
 
-int DeStandardizeTES3VTEX(unsigned short int vtex[16][16], unsigned short int ntex[16][16])
-{
+int DeStandardizeTES3VTEX(unsigned short int vtex[16][16], unsigned short int ntex[16][16]) {
     int i, j, k, l, q;
     int qx, qy;
 
@@ -814,17 +819,33 @@ int DeStandardizeTES3VTEX(unsigned short int vtex[16][16], unsigned short int nt
     vtpos = (void *) &vtex[0][0];
 
     for (q = 0; q < 4; q++) {
-                if (q == 0)      { qx = 0; qy = 0; vtpointer = 0;   }
-                else if (q == 1) { qx = 8; qy = 0; vtpointer = 64;  }
-                else if (q == 2) { qx = 0; qy = 8; vtpointer = 256; }
-                else if (q == 3) { qx = 8; qy = 8; vtpointer = 320; }
+        if (q == 0) {
+            qx = 0;
+            qy = 0;
+            vtpointer = 0;
+        }
+        else if (q == 1) {
+            qx = 8;
+            qy = 0;
+            vtpointer = 64;
+        }
+        else if (q == 2) {
+            qx = 0;
+            qy = 8;
+            vtpointer = 256;
+        }
+        else if (q == 3) {
+            qx = 8;
+            qy = 8;
+            vtpointer = 320;
+        }
 
         for (i = 0; i < 2; i++) {
-            vtpointer += (i*64);
+            vtpointer += (i * 64);
             for (j = 0; j < 2; j++) {
                 for (k = 0; k < 4; k++) {
                     for (l = 0; l < 4; l++) {
-                        memcpy((vtpos + vtpointer), &ntex[qy+k+(4*i)][qx+l+(4*j)], 2);
+                        memcpy((vtpos + vtpointer), &ntex[qy + k + (4 * i)][qx + l + (4 * j)], 2);
                         vtpointer += 2;
                     }
                 }
