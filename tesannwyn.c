@@ -49,8 +49,7 @@ int main(int argc, char *argv[]) {
             opt_upper_limit = 2147483647,
             opt_grid = -1,
             opt_ignore_land_upper = -1073741824,
-            opt_ignore_land_lower = 1073741824,
-            opt_vtex = 0;
+            opt_ignore_land_lower = 1073741824;
 
     float opt_scale = 1.0;
 
@@ -74,16 +73,13 @@ int main(int argc, char *argv[]) {
      * Parse the command line arguments.
      **********************************/
     argn = argc;
-    while ((c = getopt(argc, argv, "d:x:y:s:h:p:b:o:t:Tl:0zcgrvV")) != EOF) {
+    while ((c = getopt(argc, argv, "d:x:y:s:h:p:b:o:t:l:cgrvV")) != EOF) {
         switch (c) {
             case 'c':
                 opt_vclr = 1;
                 break;
             case 'g':
                 opt_grid = 0;
-                break;
-            case 'T':
-                opt_vtex = 3;
                 break;
             case 'b':
                 if (optarg) {
@@ -240,12 +236,12 @@ int main(int argc, char *argv[]) {
                    opt_ignore_land_lower, opt_ignore_land_upper);
         }
         ImportImage(input_files.filename[0], opt_bpp, opt_vclr, opt_sx, opt_sy,
-                    opt_image_type, opt_vtex, opt_rescale, opt_adjust_height,
+                    opt_image_type, opt_rescale, opt_adjust_height,
                     opt_limit, opt_lower_limit, opt_upper_limit, opt_x_cell_offset,
                     opt_y_cell_offset, opt_ignore_land_upper, opt_ignore_land_lower,
                     opt_texture, opt_scale);
     } else {
-        ExportImages(opt_image_type, opt_bpp, opt_vclr, opt_grid, opt_vtex,
+        ExportImages(opt_image_type, opt_bpp, opt_vclr, opt_grid,
                      opt_adjust_height, opt_rescale, opt_scale);
     }
 
@@ -349,7 +345,6 @@ int ShowUsageExit(char *argv0) {
                     "Usage: %s [options] filename\n\n"
                     "\tfilename: The image filename you want to import or ESP/ESM to export.\n\n"
                     "\t-c: Import/Export the VCLR vertex colour image as a BMP called %s.\n"
-                    "\t-T Import/Export a texture placement map a BMP called %s.\n"
                     "\t-d (numxnum): X and Y dimensions of import image. e.g. 2688x1344 (default is 1024x1024).\n"
                     "\t-p (num): Type of image file ( 1 = RAW, 2 = BMP, 3 = CSV).\n"
                     "\t-b (num): Bits per pixel of the input/output image RAW/BMP image file. For BMP, 8 bit implies Greyscale.\n"
@@ -364,7 +359,7 @@ int ShowUsageExit(char *argv0) {
                     "\t-r: (Greyscale 8-bit BMP only). Automatically rescale the Greyscale export between 0-255. (No parameter required).\n"
                     "\t-q : Quiet mode: Outputs less so runs faster in a Windows Console.\n"
                     "\t-v : Display current Version, then exit.\n",
-            argv0, TA_VCLR_IN, TA_VTEX3_OUT
+            argv0, TA_VCLR_IN
     );
 
     exit(1);

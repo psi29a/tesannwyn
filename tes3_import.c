@@ -21,7 +21,7 @@
 
 
 int ImportImage(char *input_filename, int opt_bpp, int opt_vclr, int opt_sx,
-                int opt_sy, int opt_image_type, int opt_vtex, int opt_rescale,
+                int opt_sy, int opt_image_type, int opt_rescale,
                 int opt_adjust_height, int opt_limit, int opt_lower_limit,
                 int opt_upper_limit, int opt_x_cell_offset,
                 int opt_y_cell_offset, int opt_ignore_land_upper,
@@ -110,14 +110,9 @@ int ImportImage(char *input_filename, int opt_bpp, int opt_vclr, int opt_sx,
     }
 
     WriteTES3Header(fp_out);
-    if (opt_texture[0] != '\0') {
-        WriteTES3LTEX(fp_out, &total_records);
-    } else if (opt_vtex > 0) {
-        WriteTES3LTEX(fp_out, &total_records);
-    }
-    if (opt_vtex > 0) {
-        tex_size = MW_TEXSIZE;
-    }
+    WriteTES3LTEX(fp_out, &total_records);
+
+    tex_size = MW_TEXSIZE;
 
     if ((fp_in = fopen(TA_TMP_RAW, "rb")) == NULL) {
         fprintf(stderr, "Unable to open the temporary RAW file I just created (%s) for reading!: %s\n",
@@ -134,13 +129,11 @@ int ImportImage(char *input_filename, int opt_bpp, int opt_vclr, int opt_sx,
         }
     }
 
-    if (opt_vtex == 3) {
-        if ((fp_vtex[0] = fopen(TA_VTEX3_OUT, "rb")) == NULL) {
-            fprintf(stderr,
-                    "You specified that you wanted to import a VTEX3 image with this heightmap, but I cannot find it - it should be called: %s - but %s\n",
-                    TA_VTEX3_OUT, strerror(errno));
-            exit(1);
-        }
+    if ((fp_vtex[0] = fopen(TA_VTEX3_OUT, "rb")) == NULL) {
+        fprintf(stderr,
+                "You specified that you wanted to import a VTEX3 image with this heightmap, but I cannot find it - it should be called: %s - but %s\n",
+                TA_VTEX3_OUT, strerror(errno));
+        exit(1);
     }
 
     putchar('\n');
@@ -195,12 +188,10 @@ int ImportImage(char *input_filename, int opt_bpp, int opt_vclr, int opt_sx,
                 }
             }
 
-            if (opt_vtex) {
-                for (y = 0; y < tex_size; y++) {
-                    ReadVTEX3(s_vtex, tex_size, cx, cy, y, opt_sx, fp_vtex[0]);
-                    for (x = 0; x < tex_size; x++) {
-                        memcpy(&vtex_image[y][x], s_vtex + (2 * x), 2);
-                    }
+            for (y = 0; y < tex_size; y++) {
+                ReadVTEX3(s_vtex, tex_size, cx, cy, y, opt_sx, fp_vtex[0]);
+                for (x = 0; x < tex_size; x++) {
+                    memcpy(&vtex_image[y][x], s_vtex + (2 * x), 2);
                 }
             }
 
@@ -249,7 +240,7 @@ int ImportImage(char *input_filename, int opt_bpp, int opt_vclr, int opt_sx,
             } else {
                 WriteTES3CELLRecord(cx + opt_x_cell_offset, cy + opt_y_cell_offset, fp_out);
                 WriteTES3LANDRecord(cx + opt_x_cell_offset, cy + opt_y_cell_offset, (int (*)[]) &image, vclr_image,
-                                    vtex_image, fp_out, opt_vtex, opt_vclr, &total_overflows, &total_underflows,
+                                    vtex_image, fp_out, opt_vclr, &total_overflows, &total_underflows,
                                     &total_land, opt_texture);
             }
         }
@@ -259,10 +250,8 @@ int ImportImage(char *input_filename, int opt_bpp, int opt_vclr, int opt_sx,
 
     if (opt_vclr) fclose(fp_vclr);
 
-    if (opt_vtex) {
-        for (int i = 0; i < MAX_LAYERS; i++) {
-            if (fp_vtex[i] != NULL) fclose(fp_vtex[i]);
-        }
+    for (int i = 0; i < MAX_LAYERS; i++) {
+        if (fp_vtex[i] != NULL) fclose(fp_vtex[i]);
     }
 
     fclose(fp_in);
@@ -307,7 +296,7 @@ int CatchGradientOverflows(int *gradient, int *total_overflows, int *total_under
 }
 
 int WriteTES3LANDRecord(int cx, int cy, int image[66][66], char vclr[66][66][3], short unsigned int vtex3[16][16],
-                        FILE *fp_out, int opt_vtex, int opt_vclr, int *total_overflows, int *total_underflows,
+                        FILE *fp_out, int opt_vclr, int *total_overflows, int *total_underflows,
                         int *total_land, char *opt_texture) {
     short int tex_num = 0;
     int size = 0;
@@ -350,9 +339,7 @@ int WriteTES3LANDRecord(int cx, int cy, int image[66][66], char vclr[66][66][3],
     }
 
     size = 17040; // 16959 - was 17040; // 12727+vhgt = 16967+wnam =
-    if (opt_texture[0] != '\0' || opt_vtex > 0) {
-        size += 520;
-    }
+    size += 520;
     if (opt_vclr) {
         size += 12683;
     }
@@ -368,9 +355,7 @@ int WriteTES3LANDRecord(int cx, int cy, int image[66][66], char vclr[66][66][3],
     fwrite(&cy, 4, 1, fp_out);
 
     fprintf(fp_out, "DATA%c%c%c%c", 4, 0, 0, 0);
-    if (opt_vclr == 0 && opt_texture[0] == '\0' && opt_vtex <= 0) {
-        fprintf(fp_out, "%c%c%c%c", 9, 0, 0, 0);
-    } else if (!opt_vclr) {
+    if (!opt_vclr) {
         fprintf(fp_out, "%c%c%c%c", 13, 0, 0, 0);
     } else {
         fprintf(fp_out, "%c%c%c%c", 7, 0, 0, 0);
@@ -437,13 +422,13 @@ int WriteTES3LANDRecord(int cx, int cy, int image[66][66], char vclr[66][66][3],
         }
     }
 
-    if (opt_texture[0] != '\0') {
+    if (opt_texture[0] != '\0') { // TODO: do we ever get here?
         tex_num = atoi(opt_texture);
         fprintf(fp_out, "VTEX%c%c%c%c", 0, 2, 0, 0);
         for (int i = 0; i < 256; i++) {
             fwrite(&tex_num, 2, 1, fp_out);
         }
-    } else if (opt_vtex > 0) {
+    } else {
         fprintf(fp_out, "VTEX%c%c%c%c", 0, 2, 0, 0);
         short unsigned int ntex[16][16];
         DeStandardizeTES3VTEX(ntex, vtex3);

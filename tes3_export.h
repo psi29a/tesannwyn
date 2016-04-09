@@ -17,11 +17,11 @@ int bytes_to_int(char, char, char, char);
 
 int CleanUp(int [], int [], int *);
 
-int ExportImages(int, int, int, int, int, int, int, float);
+int ExportImages(int, int, int, int, int, int, float);
 
-int ExportTES3Land(char *, int, int, int [], int [], int *);
+int ExportTES3Land(char *, int, int [], int [], int *);
 
-int Process3LANDData(char *, int, int, int, int [], int [], int *);
+int Process3LANDData(char *, int, int, int [], int [], int *);
 
 int ReplaceVTEX3Textures(char *);
 

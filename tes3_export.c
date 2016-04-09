@@ -623,7 +623,7 @@ int CleanUp(int cleanup_list_x[], int cleanup_list_y[], int *cleanup_list_count)
     return 0;
 }
 
-int ExportImages(int opt_image_type, int opt_bpp, int opt_vclr, int opt_grid, int opt_vtex, int opt_adjust_height,
+int ExportImages(int opt_image_type, int opt_bpp, int opt_vclr, int opt_grid, int opt_adjust_height,
                  int opt_rescale, float opt_scale) {
     int i;
     ltex.count = 0;
@@ -644,7 +644,7 @@ int ExportImages(int opt_image_type, int opt_bpp, int opt_vclr, int opt_grid, in
 
     for (i = 0; i < input_files.count; i++) {
         printf("\nRunning TES3 exporter:\n");
-        ExportTES3Land(input_files.filename[i], opt_vclr, opt_vtex, cleanup_list_x, cleanup_list_y,
+        ExportTES3Land(input_files.filename[i], opt_vclr, cleanup_list_x, cleanup_list_y,
                        &cleanup_list_count);
     }
 
@@ -653,10 +653,8 @@ int ExportImages(int opt_image_type, int opt_bpp, int opt_vclr, int opt_grid, in
         HumptyVCLR(TA_VCLR_OUT, opt_grid);
     }
 
-    if (opt_vtex) {
-        printf("\n\nGenerating BMP of VTEX placement data: %s ... \n", TA_VTEX3_OUT);
-        HumptyVTEX3(TA_VTEX3_OUT);
-    }
+    printf("\n\nGenerating BMP of VTEX placement data: %s ... \n", TA_VTEX3_OUT);
+    HumptyVTEX3(TA_VTEX3_OUT);
 
     if (opt_image_type == RAW) {
         printf("\n\nGenerating new RAW output file: %s ...\n", TA_RAW_OUT);
@@ -689,7 +687,7 @@ int ExportImages(int opt_image_type, int opt_bpp, int opt_vclr, int opt_grid, in
     return 0;
 }
 
-int ExportTES3Land(char *input_esp_filename, int opt_vclr, int opt_vtex, int cleanup_list_x[], int cleanup_list_y[],
+int ExportTES3Land(char *input_esp_filename, int opt_vclr, int cleanup_list_x[], int cleanup_list_y[],
                    int *cleanup_list_count) {
     char s[40];    /* For storing the 16-byte header. */
     FILE *fpin;    /* Input File Stream (original ESP/ESM).      */
@@ -745,7 +743,7 @@ int ExportTES3Land(char *input_esp_filename, int opt_vclr, int opt_vtex, int cle
          *****************************************************/
         if (strncmp(s, "LAND", 4) == 0) {
             //putchar(s[0]); // TODO: verbose output
-            Process3LANDData(or + 16, size - 16, opt_vclr, opt_vtex, cleanup_list_x, cleanup_list_y,
+            Process3LANDData(or + 16, size - 16, opt_vclr, cleanup_list_x, cleanup_list_y,
                              cleanup_list_count);
         } else if (strncmp(s, "LTEX", 4) == 0) {
             //putchar(s[0]); // TODO: verbose output
@@ -776,7 +774,7 @@ int ExportTES3Land(char *input_esp_filename, int opt_vclr, int opt_vtex, int cle
 ** LAND (4 bytes) + Length (4 bytes) + X (4 bytes) + Y (4 bytes).
 ****************************************************************/
 
-int Process3LANDData(char *r, int size, int opt_vclr, int opt_vtex, int cleanup_list_x[], int cleanup_list_y[],
+int Process3LANDData(char *r, int size, int opt_vclr, int cleanup_list_x[], int cleanup_list_y[],
                      int *cleanup_list_count) {
     int pos = 0,
             nsize = 0,
@@ -854,7 +852,7 @@ int Process3LANDData(char *r, int size, int opt_vclr, int opt_vtex, int cleanup_
             fwrite(r + vhgt_pos + 4329 + 8, 12675, 1, fp_land);
 
             fclose(fp_land);
-        } else if (strncmp("VTEX", r + pos, 4) == 0 && opt_vtex) {
+        } else if (strncmp("VTEX", r + pos, 4) == 0) {
             sprintf(tmp_land_filename, "%s/vtex3.%d.%d.tmp", TA_TMP_DIR, current_x, current_y);
 
             if ((fp_land = fopen(tmp_land_filename, "wb")) == 0) {
