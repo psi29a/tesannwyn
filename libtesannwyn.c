@@ -12,6 +12,12 @@
 #include "libtesannwyn.h"
 #include "defs.h"
 
+// TODO: not thread safe, needs to worked into tes_context
+static int min_x = 32768,
+        max_x = -32768,
+        min_y = 32768,
+        max_y = -32768;
+
 tes_context tes_export(char *filename, int bpp) {
     tes_context context;
     context.is_import = 0;
@@ -289,6 +295,12 @@ void Process_TES3_LAND_Data(char *r, int size) {
 
         pos += 8 + nsize;
     }
+
+    if (current_x < min_x) min_x = current_x;
+    if (current_x > max_x) max_x = current_x;
+
+    if (current_y < min_y) min_y = current_y;
+    if (current_y > max_y) max_y = current_y;
 }
 
 void Replace_VTEX3_Textures(char *vtex) {
@@ -459,11 +471,6 @@ void Create_RAW(char *output_filename, int bpp) {
     char land_data[32000];
     char vhgt_data[16384];
     char land_filename[256];
-
-    int min_x = 32768,
-            max_x = -32768,
-            min_y = 32768,
-            max_y = -32768;
 
     FILE *fp_o,
             *fp_land;
