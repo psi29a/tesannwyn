@@ -26,16 +26,16 @@ tes_context tes_export(char *filename, int bpp);
 
 
 // declarations for tes3_export
-int Write_LTEX_data(char *);
+void Write_LTEX_data(char *);
 int Get_Form_ID_For_Filename(char *, char *, char *, char *);
-int String_To_Reverse_FormID(char *, char *);
-int Process_TES3_LTEX_Data(char *);
-int Form_ID_To_String(char *, char *);
+void String_To_Reverse_FormID(char *, char *);
+void Process_TES3_LTEX_Data(char *);
+void Form_ID_To_String(char *, char *);
 unsigned int Bytes_To_Int(char, char, char, char);
-int Replace_VTEX3_Textures(char *);
-int Standardize_TES3_VTEX(unsigned short int [16][16], unsigned short int [16][16]);
-int Process_TES3_LAND_Data(char *, int);
-int Export_TES3_Land(char *);
-int Create_RAW(char *, int);
+void Replace_VTEX3_Textures(char *);
+void Standardize_TES3_VTEX(unsigned short int [16][16], unsigned short int [16][16]);
+void Process_TES3_LAND_Data(char *, int);
+void Export_TES3_Land(char *);
+void Create_RAW(char *, int);
 
 #endif //TESANNWYN_LIBTESANNWYN_H

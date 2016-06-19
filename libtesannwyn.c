@@ -12,7 +12,7 @@
 #include "libtesannwyn.h"
 #include "defs.h"
 
-tes_context tes_export(char *filename, int bpp){
+tes_context tes_export(char *filename, int bpp) {
     tes_context context;
     context.is_import = 0;
 
@@ -30,8 +30,7 @@ tes_context tes_export(char *filename, int bpp){
 }
 
 
-
-int Export_TES3_Land(char *input_esp_filename) {
+void Export_TES3_Land(char *input_esp_filename) {
     char s[40];    /* For storing the 16-byte header. */
     FILE *fpin;    /* Input File Stream (original ESP/ESM).      */
 
@@ -104,11 +103,9 @@ int Export_TES3_Land(char *input_esp_filename) {
         unlink(TA_LTEX3_OUT);
         Write_LTEX_data(TA_LTEX3_OUT);
     }
-
-    return 0;
 }
 
-int Write_LTEX_data(char *filename) {
+void Write_LTEX_data(char *filename) {
     int i;
 
     FILE *fp_lt;
@@ -128,19 +125,17 @@ int Write_LTEX_data(char *filename) {
 
     fclose(fp_lt);
 
-    return 0;
 }
 
-int Form_ID_To_String(char *s, char *formid) {
+void Form_ID_To_String(char *s, char *formid) {
     sprintf(s, "%2.2X%2.2X%2.2X%2.2X",
             (unsigned char) formid[3],
             (unsigned char) formid[2],
             (unsigned char) formid[1],
             (unsigned char) formid[0]);
-    return 0;
 }
 
-int Process_TES3_LTEX_Data(char *r) {
+void Process_TES3_LTEX_Data(char *r) {
     short unsigned int i;
     int pos = 0;
     size_t nsize;
@@ -185,7 +180,8 @@ int Process_TES3_LTEX_Data(char *r) {
     }
 
     if (i >= ltex.count) { // Not found, so this LTEX record must be added to the list.
-        if (Get_Form_ID_For_Filename(tname, ltex.texname[ltex.count], ltex.filename[ltex.count], ltex.formid[ltex.count])) {
+        if (Get_Form_ID_For_Filename(tname, ltex.texname[ltex.count], ltex.filename[ltex.count],
+                                     ltex.formid[ltex.count])) {
             ltex.count++;
             ltex.texnum[ltex.count - 1] = ltex.count;
         } else {
@@ -198,8 +194,6 @@ int Process_TES3_LTEX_Data(char *r) {
         vtex3_replace.replace_count++;
     }
     vtex3_replace.myindex++;
-
-    return 0;
 }
 
 /*****************************************************************
@@ -208,7 +202,7 @@ int Process_TES3_LTEX_Data(char *r) {
 ** LAND (4 bytes) + Length (4 bytes) + X (4 bytes) + Y (4 bytes).
 ****************************************************************/
 
-int Process_TES3_LAND_Data(char *r, int size) {
+void Process_TES3_LAND_Data(char *r, int size) {
     int pos = 0,
             nsize = 0,
             vnml_size = 0,
@@ -234,7 +228,6 @@ int Process_TES3_LAND_Data(char *r, int size) {
         fprintf(stderr,
                 "WARNING: I couldn't find the INTV header for this TES3 LAND record (got [%c%c%c%c] - ignoring record.\n",
                 r[0], r[1], r[2], r[3]);
-        return 1;
     }
 
     if (strncmp("DATA", r + pos, 4) == 0) {
@@ -243,7 +236,7 @@ int Process_TES3_LAND_Data(char *r, int size) {
     }
 
     if (strncmp("VNML", r + pos, 4) != 0) {
-        return -1;
+
     }
 
     vnml_pos = pos;
@@ -252,7 +245,7 @@ int Process_TES3_LAND_Data(char *r, int size) {
 
     if (strncmp("VHGT", r + vhgt_pos, 4) != 0) {
         fprintf(stderr, "Unable to find VHGT!!!\n");
-        return -1;
+
     }
 
     sprintf(tmp_land_filename, "%s/land.%d.%d.tmp", TA_TMP_DIR, current_x, current_y);
@@ -296,11 +289,9 @@ int Process_TES3_LAND_Data(char *r, int size) {
 
         pos += 8 + nsize;
     }
-
-    return 0;
 }
 
-int Replace_VTEX3_Textures(char *vtex) {
+void Replace_VTEX3_Textures(char *vtex) {
     for (int i = 0; i < 256; i++) {
         short unsigned int tex = (short unsigned int) *(vtex + (2 * i));
         for (int j = 0; j < vtex3_replace.replace_count; j++) {
@@ -309,10 +300,9 @@ int Replace_VTEX3_Textures(char *vtex) {
             }
         }
     }
-    return 0;
 }
 
-int Standardize_TES3_VTEX(unsigned short int vtex[16][16], unsigned short int ntex[16][16]) {
+void Standardize_TES3_VTEX(unsigned short int vtex[16][16], unsigned short int ntex[16][16]) {
     int i, j, k, l;
     int q = 0;
     int qx = 0, qy = 0;
@@ -361,8 +351,6 @@ int Standardize_TES3_VTEX(unsigned short int vtex[16][16], unsigned short int nt
             }
         }
     }
-
-    return 0;
 }
 
 /****************************************************
@@ -432,8 +420,8 @@ int Get_Form_ID_For_Filename(char *tex_filename, char *ltex_name, char *ltex_fil
     }
 }
 
-int String_To_Reverse_FormID(char *s, char *form_id) {
-    int j;
+void String_To_Reverse_FormID(char *s, char *form_id) {
+    unsigned short j;
     char htmp[3];
 
     for (j = 0; j < 4; j++) {
@@ -446,15 +434,13 @@ int String_To_Reverse_FormID(char *s, char *form_id) {
 
         form_id[3 - j] = (char) strtol(htmp, NULL, 16);
     }
-
-    return 0;
 }
 
 
 // Creates a RAW or BMP (opt_image_type) image called output_filename.
 // It reads the VHGT data from files called "landx.y.tmp" where x and y are the range
 // of co-ordinates matched from the ESP in the preceding function.
-int Create_RAW(char *output_filename, int bpp) {
+void Create_RAW(char *output_filename, int bpp) {
     int i, j = 0;
     int c;
     int x, y;
@@ -588,6 +574,4 @@ int Create_RAW(char *output_filename, int bpp) {
         }
     }
     fclose(fp_o);
-
-    return 0;
 }
