@@ -16,7 +16,6 @@ typedef struct {
 } height_stats;
 
 typedef struct {
-    char *data;
     unsigned short int is_import;
     height_stats statistics;
 

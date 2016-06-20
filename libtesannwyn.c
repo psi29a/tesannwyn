@@ -69,8 +69,7 @@ void Export_TES3_Land(char *input_esp_filename) {
 
         char *or = malloc(size);    /* Pointer to the Original Record. */
         if (or == NULL) {
-            fprintf(stderr, "Unable to allocate %d bytes of"
-                            " memory to store TES file record: %s\n",
+            fprintf(stderr, "Unable to allocate %u bytes of memory to store TES file record: %s\n",
                     size, strerror(errno));
             exit(1);
         }
@@ -78,8 +77,7 @@ void Export_TES3_Land(char *input_esp_filename) {
         fseek(fpin, -16, SEEK_CUR);
 
         if (fread(or, 1, size, fpin) < size) {
-            fprintf(stderr, "Unable to read entire marker record"
-                            " (%d bytes) from %s into memory: %s\n",
+            fprintf(stderr, "Unable to read entire marker record (%u bytes) from %s into memory: %s\n",
                     size, input_esp_filename, strerror(errno));
             exit(1);
         }
@@ -126,7 +124,7 @@ void Write_LTEX_data(char *filename) {
 
     for (i = 0; i < ltex.count; i++) {
         Form_ID_To_String(FormID, ltex.formid[i]);
-        fprintf(fp_lt, "%d,%s,%s,%s\n", ltex.texnum[i], ltex.texname[i], ltex.filename[i], FormID);
+        fprintf(fp_lt, "%u,%s,%s,%s\n", ltex.texnum[i], ltex.texname[i], ltex.filename[i], FormID);
     }
 
     fclose(fp_lt);
