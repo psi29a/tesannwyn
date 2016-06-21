@@ -1,16 +1,20 @@
-cmake_minimum_required(VERSION 2.6)
-
-project(tesannwyn C)
+PROJECT(tesannwyn C)
+CMAKE_MINIMUM_REQUIRED(VERSION 2.6)
 
 # Datadiver version
 SET(VERSION_MAJOR 0)
 SET(VERSION_MINOR 2)
 SET(VERSION_RELEASE 5)
-SET(DATADIVER_VERSION "${VERSION_MAJOR}.${VERSION_MINOR}.${VERSION_RELEASE}")
+SET(TESANNWYN_VERSION "${VERSION_MAJOR}.${VERSION_MINOR}.${VERSION_RELEASE}")
 
 # lib versions
 SET(SOVERSION 1)
 SET(VERSION 1.0.0)
+
+INCLUDE(CMakeDependentOption)
+INCLUDE(CheckCCompilerFlag)
+INCLUDE(CheckCSourceCompiles)
+INCLUDE(TestBigEndian)
 
 # Set a default build type if none was specified
 IF(NOT DEFINED CMAKE_BUILD_TYPE OR CMAKE_BUILD_TYPE STREQUAL "")
@@ -21,13 +25,6 @@ IF(NOT DEFINED CMAKE_BUILD_TYPE OR CMAKE_BUILD_TYPE STREQUAL "")
 ENDIF()
 SET(CMAKE_CONFIGURATION_TYPES "${CMAKE_BUILD_TYPE}")
 MESSAGE(STATUS "Build Type: ${CMAKE_BUILD_TYPE}")
-
-set(CMAKE_MODULE_PATH "${tesannwyn_SOURCE_DIR}/cmake" "${CMAKE_MODULE_PATH}")
-
-include(CMakeDependentOption)
-include(CheckCCompilerFlag)
-include(CheckCSourceCompiles)
-include(TestBigEndian)
 
 check_c_compiler_flag("-Wall" HAVE_WALL_SWITCH)
 if(HAVE_WALL_SWITCH)
@@ -104,11 +101,20 @@ CHECK_C_SOURCE_COMPILES("static __inline int static_foo() {return 0;}
 
 TEST_BIG_ENDIAN(WORDS_BIGENDIAN)
 
-find_library(M_LIBRARY m REQUIRED)
-set(CMAKE_REQUIRED_INCLUDES math.h)
-set(CMAKE_REQUIRED_LIBRARIES m)
+FIND_LIBRARY(M_LIBRARY m REQUIRED)
+SET(CMAKE_REQUIRED_INCLUDES math.h)
+SET(CMAKE_REQUIRED_LIBRARIES m)
 
 # ############ common libtesannwyn #############
+
+# Setup our tesannwyn library that we link to
+SET(tesannwyn_library_SRCS
+        libtesannwyn.c
+        )
+
+SET(tesannwyn_library_HDRS
+        libtesannwyn.h
+        )
 
 # set our target paths
 SET(EXECUTABLE_OUTPUT_PATH "${CMAKE_BINARY_DIR}")
@@ -123,24 +129,38 @@ ELSE() # everyone else uses .a and .so
     SET(LIBRARY_STATIC_NAME "tesannwyn")
 ENDIF()
 
+# always build our dynamic library
+ADD_LIBRARY(libtesannwyn_dynamic SHARED
+        ${tesannwyn_library_SRCS}
+        ${tesannwyn_library_HDRS}
+        )
+
+TARGET_LINK_LIBRARIES(libtesannwyn_dynamic
+        ${M_LIBRARY}
+        )
+
+SET_TARGET_PROPERTIES(libtesannwyn_dynamic PROPERTIES
+        SOVERSION ${SOVERSION}
+        VERSION ${VERSION}
+        OUTPUT_NAME ${LIBRARY_DYN_NAME} CLEAN_DIRECT_OUTPUT 1
+        )
+
 # Set our default and then look at the possible locations
-SET(LIBDATADIVER "${CMAKE_BINARY_DIR}/lib${LIBRARY_DYN_NAME}.so")
+SET(TESANNWYNLIB "${CMAKE_BINARY_DIR}/lib${LIBRARY_DYN_NAME}.so")
 
-include_directories("${tesannwyn_SOURCE_DIR}")
+INCLUDE_DIRECTORIES("${tesannwyn_SOURCE_DIR}")
 
-set(SRCS
+SET(tesannwyn_SRCS
         tes3_import.c
         tes3_export.c
-        tesannwyn.c
-        libtesannwyn.c)
+        tesannwyn.c)
 
-set(HDRS
+SET(tesannwyn_HDRS
         defs.h
         tes3_import.h
-        tes3_export.h
-        libtesannwyn.h)
+        tes3_export.h)
 
-set(DATA_PATH "${tesannwyn_SOURCE_DIR}")
-add_executable(tesannwyn ${SRCS} ${HDRS})
-target_link_libraries(tesannwyn ${M_LIBRARY})
-install(TARGETS tesannwyn RUNTIME DESTINATION bin)
+ADD_EXECUTABLE(tesannwyn ${tesannwyn_SRCS} ${tesannwyn_HDRS})
+ADD_DEPENDENCIES(tesannwyn libtesannwyn_dynamic)
+TARGET_LINK_LIBRARIES(tesannwyn ${TESANNWYNLIB} ${M_LIBRARY})
+INSTALL(TARGETS tesannwyn RUNTIME DESTINATION bin)
